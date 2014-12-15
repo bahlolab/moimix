@@ -1,5 +1,7 @@
-.RHistory
 .RData
 ./data
 ._haldane.Rproj
 .Rproj.user
+.Rbuildignore
+.Rhistory
+._*
