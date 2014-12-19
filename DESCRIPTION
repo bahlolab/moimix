@@ -1,13 +1,11 @@
 Package: haldane
-Title: Tools for malaria genomics
+Title: haldane: Tools for malaria genomics
 Version: 0.0.0.9000
 Authors@R: "Stuart Lee <lee.s@wehi.edu.au> [aut, cre]"
-Description: R package to manipulate and analyse sequencing data
-from malaria parasites. There are three main tasks implemented:
-1. Population genetics analysis
-2. Genotype calling from fluidigm data
-3. Simulation of multiplicity of infection data
-
+Description: R package to manipulate and analyse sequencing data from malaria
+    parasites. haldane can be used to simulate data under multipcicity of
+    infection, population genetics analysis of isolate populations, and
+    simulation of data produced by Fluidigm dynamic array technology.
 Depends:
     R (>= 3.1.1)
 License: MIT + file LICENSE
