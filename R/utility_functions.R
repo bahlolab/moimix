@@ -93,3 +93,35 @@ rtexp <- function(n, mu, t) {
   stopifnot( min(x) >= 0, max(x) <= t )
   x
 }
+
+#--- Input/Output functions
+
+#' Convert VCF file into Matrix format
+#'
+#' @description Read in Variant Call format file and output a matrix of SNPs
+#' @details Assumes VCF file only contains SNPs and coming from haploid organism
+#' . The output is n by m matrix, where n corresponds to sample name and
+#' m is the number of SNPs. Each element of the matrix can take values 0, 1, 2
+#' or 3 mapping to the set of genotypes {./., A/A, B/B, A/B} where A is reference
+#' allele and B is alternate allele.
+#' @param vcf vcf file to be read
+#' @return a matrix of SNP calls
+#' @export
+vcftoMatrix <- function(vcf) {
+  # establish connection to file
+  # check whether gzip or not
+  if (!grepl(".vcf", vcf)) stop("Not a valid vcf file.")
+  if (grepl("vcf.gz$", vcf)) {
+    con <- gzfile(vcf)
+  }
+  else {
+    con <- file(vcf)
+  }
+
+  headerLine <- "^#"
+  variants <- readLines(con, n = 1000)
+  noheader <- grep(headerLine, variants)
+  variants[noheader]
+
+}
+}
