@@ -55,7 +55,19 @@ alleleFreqEst <- function(gdsfile, reference = TRUE) {
 
 #' Within sample B-allele frequency estimate
 #'
-
+#'@description Estimate within sample B-allele frequency from variant support
+#'reads and read depth.
+#'@importClassesFrom GenomicRanges granges
+#'@importClassesFrom SeqArray SeqVarGDS
+#'@importFrom SeqArray seqSetFilter seqGetData
+#'@importFrom GenomicRanges elementmetaData
+#'@param gdsfile a SeqVarGDS class object
+#'@param sample.id character string for sample identifier
+#'@param minDP numeric minimum depth to consider
+#'@param minGQ numeric minimum geontype quality to consider
+#'@param metadata.granges a GRanges class object pertaining to variant sites
+#'@return a GRanges class object with metadata slot 'bfreq'
+#'@export
 bVarFreqEst <- function(gdsfile, sample.id, minDP, minGQ, metadata.granges) {
   # estimate the variant allele frequency on a per sample basis
   # based on coverage, and apply filters
@@ -71,7 +83,34 @@ bVarFreqEst <- function(gdsfile, sample.id, minDP, minGQ, metadata.granges) {
   # reset filter
   filtered.granges
 }
+# chrom.names <- list("Pf3D7_01_v3" = "01",
+#                     "Pf3D7_02_v3" = "02",
+#                     "Pf3D7_03_v3" = "03",
+#                     "Pf3D7_04_v3" = "04",
+#                     "Pf3D7_05_v3" = "05",
+#                     "Pf3D7_06_v3" = "06",
+#                     "Pf3D7_07_v3" = "07",
+#                     "Pf3D7_08_v3" = "08",
+#                     "Pf3D7_09_v3" = "09",
+#                     "Pf3D7_10_v3" = "10",
+#                     "Pf3D7_11_v3" = "11",
+#                     "Pf3D7_12_v3" = "12",
+#                     "Pf3D7_13_v3" = "13",
+#                     "Pf3D7_14_v3" = "14")
+#
+# chrom_labeller = function(variable, value) {
+#   return(chrom.names[value])
+# }
 
+
+#' Plot B-allele frequency genome wide
+#'
+#' @description Plot allele-frequency spectrum accross genome and facet by
+#' chromosome
+#' @importFrom ggbio ggplot
+#' @import ggplot2
+#' @param sample.granges a GRanges object
+#' @return a ggplot2 object
 plotVarFreq <- function(sample.granges) {
   ggbio::ggplot(sample.granges) +
     geom_point(aes(x = start, y = bfreq), size = 0.5, alpha = 0.05) +
