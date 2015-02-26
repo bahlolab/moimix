@@ -53,14 +53,40 @@ alleleFreqEst <- function(gdsfile, reference = TRUE) {
 
 }
 
+#' P.falciparum chromosome labeller
+#' @description Key-value pairs for mapping Pf3D7 chromsome names to numeric
+#' chromsome. Used as labeller for facet grid
+#' @param variable Pf3D7 chromosome name
+#' @param value numeric chromsome name
+#' @export
+chrom_labeller <- function(variable, value) {
+
+  chrom.names <- list("Pf3D7_01_v3" = "01",
+                      "Pf3D7_02_v3" = "02",
+                      "Pf3D7_03_v3" = "03",
+                      "Pf3D7_04_v3" = "04",
+                      "Pf3D7_05_v3" = "05",
+                      "Pf3D7_06_v3" = "06",
+                      "Pf3D7_07_v3" = "07",
+                      "Pf3D7_08_v3" = "08",
+                      "Pf3D7_09_v3" = "09",
+                      "Pf3D7_10_v3" = "10",
+                      "Pf3D7_11_v3" = "11",
+                      "Pf3D7_12_v3" = "12",
+                      "Pf3D7_13_v3" = "13",
+                      "Pf3D7_14_v3" = "14")
+
+  return(chrom.names[value])
+}
+
+
 #' Within sample B-allele frequency estimate
 #'
 #'@description Estimate within sample B-allele frequency from variant support
 #'reads and read depth.
-#'@importClassesFrom GenomicRanges granges
-#'@importClassesFrom SeqArray SeqVarGDS
+#'@import GenomicRanges
+#'@importClassesFrom SeqArray SeqVarGDSClass
 #'@importFrom SeqArray seqSetFilter seqGetData
-#'@importFrom GenomicRanges elementmetaData
 #'@param gdsfile a SeqVarGDS class object
 #'@param sample.id character string for sample identifier
 #'@param minDP numeric minimum depth to consider
@@ -83,25 +109,6 @@ bVarFreqEst <- function(gdsfile, sample.id, minDP, minGQ, metadata.granges) {
   # reset filter
   filtered.granges
 }
-# chrom.names <- list("Pf3D7_01_v3" = "01",
-#                     "Pf3D7_02_v3" = "02",
-#                     "Pf3D7_03_v3" = "03",
-#                     "Pf3D7_04_v3" = "04",
-#                     "Pf3D7_05_v3" = "05",
-#                     "Pf3D7_06_v3" = "06",
-#                     "Pf3D7_07_v3" = "07",
-#                     "Pf3D7_08_v3" = "08",
-#                     "Pf3D7_09_v3" = "09",
-#                     "Pf3D7_10_v3" = "10",
-#                     "Pf3D7_11_v3" = "11",
-#                     "Pf3D7_12_v3" = "12",
-#                     "Pf3D7_13_v3" = "13",
-#                     "Pf3D7_14_v3" = "14")
-#
-# chrom_labeller = function(variable, value) {
-#   return(chrom.names[value])
-# }
-
 
 #' Plot B-allele frequency genome wide
 #'
@@ -111,10 +118,11 @@ bVarFreqEst <- function(gdsfile, sample.id, minDP, minGQ, metadata.granges) {
 #' @import ggplot2
 #' @param sample.granges a GRanges object
 #' @return a ggplot2 object
+#' @export
 plotVarFreq <- function(sample.granges) {
   ggbio::ggplot(sample.granges) +
     geom_point(aes(x = start, y = bfreq), size = 0.5, alpha = 0.05) +
-    facet_grid(seqnames ~ .) +
+    facet_grid(seqnames ~ ., labeller = chrom_labeller) +
     theme_bw() +
     labs(y = "B-allele frequency",
          x = "Position (bp)") +
