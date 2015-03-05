@@ -3,7 +3,20 @@
 # Date: 25-02-2015
 # Description: functions for manipulating vcf files
 # using the SeqArray package
-
+#' Obtain genotypes from a file
+#' @description Contruct matrix of genotypes. Dimension will be nsample * nvar
+#' @param gdsfile a SeqVarGDS class object
+#' @importFrom SeqArray seqApply
+#' @importClassesFrom SeqArray SeqVarGDSClass
+#' @return a matrix of genotypes
+constructGenotypes <- function(gdsfile) {
+     gc <- seqApply(gdsfile, "genotype",
+                              function(x) { paste(x[1,], x[2,], sep="/") },
+                              margin="by.variant", as.is="list")
+     gc2 <- matrix(unlist(gc), ncol=length(gc))
+     gc2[gc2 == "NA/NA"] <- NA
+     gc2
+}
 #' Missing rate per sample
 #'
 #' @description Calculate the proportion of "No calls" in a sample
@@ -18,8 +31,8 @@
 sampleMissingness <- function(gdsfile) {
   stopifnot(class(gdsfile) == "SeqVarGDSClass")
   geno.summary <- seqSummary(gdsfile, "genotype")
-  dm <- geno$seldim
-  ploidy <- geno$dim[1]
+  dm <- geno.summary$seldim
+  ploidy <- geno.summary$dim[1]
   n <- integer(dm[1])
   seqApply(gdsfile, "genotype",
            function(x) { n <<- n + colSums(is.na(x)) },
