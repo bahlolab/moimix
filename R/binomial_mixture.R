@@ -16,12 +16,12 @@ dbinommix <- function(x, n1, n2, p, q, f) {
   f * m1 + (1-f) * m2
 }
 #' Compute complete log-likelihood based on current estimates
-eStep <- function(f, theta) {
+eStep <- function(x, theta) {
 
 }
 
 #' Maxisime likelihood given updated estimates
-mStep <- function(f.new, theta.new) {
+mStep <- function(theta.new) {
 
 }
 
@@ -37,8 +37,20 @@ binommixEM <- function(x, epsilon = 0.01, niter = 1000) {
   f.init <- runif(1)
   notdone <- TRUE
   while(notdone) {
-    if (all(abs(theta.hat - theta) <= epsilon) && niter) {
+
+    loglik <- eStep(x, theta)
+    theta_hat <- mStep(loglik)
+
+    error <- theta_hat - theta
+    theta <- theta_hat
+    if (all(abs(error) <= epsilon) && niter) {
       break
+    }
+    else {
+      niter <- niter - 1
+      if (niter == 0) {
+        stop("EM algorithm did not converge.")
+      }
     }
   }
 }
