@@ -36,4 +36,23 @@ mseMM <- function(mixture, pi) {
   mean((pi - pi.hat)^2)
 }
 
+#' CDF for binomial mixture model
+#'
+#'@param mixture
+#'@param x vector of read counts supporting each SNV
+#'@param N vector of coverage at SNV
+#'@return Vector of theoretical quantiles
+
+binommixCDF <- function(mixture, x, N) {
+  pi <- mixture$pi
+  k <- mixture$k
+  pbinomForMix <- function(x, N, component) {
+    pi[component] * pbinom(x, size = N,
+                           prob = mixture$mu[component])
+  }
+
+  pbinoms <- sapply(1:k, pbinomForMix, x = x, N = N)
+  return(rowSums(pbinoms))
+}
+
 
