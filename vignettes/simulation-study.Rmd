@@ -1,0 +1,99 @@
+---
+title: "Simulation study: Part 1"
+author: "Vignette Author"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    fig_caption: yes
+
+
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+```{r knitr.opts, include = FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo=FALSE)
+```
+# Background
+
+
+# Generating input parameters
+We estimate the parameters of a truncated beta distribution with shape $\alpha$ and scale $\beta$ parameters from our filtered Papua New Guinea _P.falciparum_ isolate data. This data contains 104 isolates with approximately 110,000 SNPs. We filter this dataset further to include SNPs that have a minor allele frequency between 0.05 and 0.5. 
+```{r load-plot-data, fig.align='center', fig.cap="PNG P.Falciparum minor allele frequency distribution"}
+library(haldane)
+data(png.allele.frq)
+
+pngMAF <- png.allele.frq$maf
+pngMAF <- pngMAF[pngMAF >= 0.05]
+
+# histogram
+hist(pngMAF, 
+     xlim = c(0.05,0.5), 
+     xlab = "Minor allele frequency",
+     main = "")
+
+```
+
+We want to estimate the parameters of the truncated beta distribution with support $x \in [0.05, 0.5]$. Recall that the probability density function (pdf) $g(x)$ for a truncated random variable $X$ on the interval $[a,b]$ is defined as:
+
+\[ g_{X}(x) = \left\{
+\begin{array}{l l}
+\frac{f(x)}{F(b) - F(a)} & \quad \text{if $x \in [a,b]$}\\
+0 & \quad \text{otherwise}
+\end{array} \right.\]
+
+where $f_{X}(x)$ and $F_{X}(x)$ are the pdf and cumulative distribution function (cdf) of the non-truncated version of this distribution. For the truncated beta distribution on the interval $[a,b]$ we obtain the following closed form of the pdf
+
+\[ g_{X}(x) = \frac{x^{\alpha - 1}(1-x)^{\beta - 1}}{B(b; \alpha, \beta) - B(a; \alpha, \beta)}\]
+
+where $B(y; \alpha, \beta)$ is the incomplete beta function defined as:
+\[ \int_0^y t^{\alpha -1}(1-t)^{\beta-1}; \mathrm{d}t\]
+
+If we consider the sequence $X_{1}, \dots, X_{N}$ of random variables from $\text{TBeta}(\alpha, \beta)$ we can obtain the log-likelihood function as
+$$
+\begin{aligned}
+\log(\mathcal{L}(\alpha, \beta; X)) &= \sum_{i=1}^{N} \log(\frac{x_{i}^{\alpha - 1}(1-x_{i})^{\beta - 1}}{B(b; \alpha, \beta) - B(a; \alpha, \beta)}) \\
+  &= (\alpha - 1) \sum_{i=1}^{N} \log(x_{i}) + (\beta-1) \sum_{i=1}^{N} \log(x_{i} -1) + N \log(B(b; \alpha, \beta) - B(a; \alpha, \beta)) \\
+\end{aligned}
+$$
+
+We obtain the maximum likelihood estiamtes for the log-likelihood numerically. First, we compute the negative log-likelihood, and then guess the starting shape parameters using a grid search. Then using an optimisation method, we obtain the final estimates for the shape paramters.
+
+```{r log-likelihood, fig.align='center', fig.cap="The negative log-likelihood surface is an increasing function in the shape parameters. The minimum appears at the boundaries."}
+# the log likelihood function for truncated beta
+llBT <- function(shape1, shape2) {
+  dens <- dtbeta(pngMAF, shape1 = shape1, shape2 = shape2,
+        lower = 0.05, upper = 0.5)
+  -sum(log(dens))  
+}
+
+shape1 <- seq(0.01, 8, length = 30)
+shape2 <- seq(0.01, 8, length = 30)
+# generate grid
+par.space <- expand.grid(shape1, shape2)
+
+par.space$ll <- apply(par.space, 1, 
+                      function(x) llBT(x[1], x[2]))
+z.mat = matrix(par.space$ll, nrow = 30)
+contour(shape1, shape2, z.mat, nlevels = 30)
+
+start.par <- par.space[which.min(par.space$ll), c(1,2)]
+# use optim to find minimum
+llBT2 <- function(p) llBT(p[1], p[2])
+est.min <- optim(par = start.par, fn=llBT2, 
+                 method = "L-BFGS-B", lower=c(1e-6,1e-6))
+# plot likelihood curve, for alpha - beta in [0, 10]
+alpha <- seq(0.01, 8, length = 40)
+beta <- seq(0.01, 8, length = 40)
+hist(pngMAF, xlim = c(0.05, 0.5), 
+     probability = TRUE,
+     main = "",
+     xlab = "Minor allele frequency")
+curve(dtbeta(x, est.min$par[1], est.min$par[2], 
+                  lower = 0.05, upper = 0.5), 
+      add = TRUE, 
+      col = "blue")
+```
+
+
