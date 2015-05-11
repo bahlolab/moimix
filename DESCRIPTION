@@ -6,8 +6,11 @@ Description: R package to manipulate and analyse next generation sequencing data
     parasites. haldane can be used to simulate data under multipcicity of
     infection, population genetics analysis of isolate populations, and
     simulation of data produced by Fluidigm dynamic array technology.
-Depends:
+Depends: 
     R (>= 3.1.1)
 License: MIT + file LICENSE
 LazyData: true
 Imports: SeqArray, ggbio, ggplot2, GenomicRanges, S4Vectors
+Suggests: testthat,
+    knitr
+VignetteBuilder: knitr
