@@ -16,7 +16,7 @@
 #'
 #' @param n.samples integer number of humans sampled for Plasmodium
 #' @param n.snps integer number of SNPs examined
-#' @param moi.labmda integer expected number of infections per human
+#' @param moi integer number of infections per human
 #' @param coverage integer number of reads covering each base
 #' @param error numeric probability of error in base call
 #' @param dirichlet.param integer vector of length 2, specifying mixing
@@ -47,7 +47,7 @@
 #' @export
 simulateMOI <- function(n.samples,
                         n.snps,
-                        moi.lambda,
+                        moi,
                         coverage,
                         error,
                         dirichlet.param,
@@ -57,10 +57,13 @@ simulateMOI <- function(n.samples,
 
   ### This function simulates MOI data and applies two simple MOI handling strategies
   # error handling
-  # - diriichlet parameter vector must be of length 2
+  # - dirichlet parameter vector must be of length 2
   stopifnot(length(dirichlet.param) == 2)
   # error probablity must be a probability
   stopifnot(error >= 0 && error <= 1)
+
+  # moi must be between 1 and 5
+  stopifnot(moi >= 1 && moi <= 5)
 
   maf.dist <- match.fun(maf.dist)
   #
@@ -75,9 +78,8 @@ simulateMOI <- function(n.samples,
   # mut_rate = parameter for the truncated exponential alternate allele frequency generator
   # epsilon = rate of sequencing error
 
-  # 1. Simulate the MOIs from a Poisson dbn
-  # this is a vector of length N
-  moi <- rpois(n.samples, moi.lambda) + 1
+  # Create vector moi of length N
+  moi <- rep(moi, n.samples)
 
   # 2. Given the MOI, simulate the true proportions of each clone from a Dirichlet dbn
 
@@ -156,14 +158,7 @@ simulateMOI <- function(n.samples,
 
   # Return list containing parameters passed to function and data generated
   # by the simulation
-  list(param = list(n.samples = n.samples,
-                    n.snps = n.snps,
-                    moi.lambda = moi.lambda,
-                    coverage = coverage,
-                    error = error,
-                    dirichlet.param = dirichlet.param,
-                    maf.dist = maf.dist ),
-       moi.observed = moi,
+  list(moi.observed = moi,
        dirichlet.alphas = dirichlet.alphas,
        clone.props = clone.props,
        reads.per.clone = reads.per.clone,
