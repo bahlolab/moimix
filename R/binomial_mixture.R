@@ -34,7 +34,7 @@ mixLL <- function(x, N, k, mixture.weights, mixture.comp) {
            dbinom(x,
                   size = N,
                   prob = mixture.comp[k]))
-  sum(log(unlist(within.class.ll)))
+  sum(apply(within.class.ll, 1, function(x) log(sum(x))))
 }
 
 
@@ -53,8 +53,7 @@ initEM <- function(x, N, k) {
   mixture.comp <- kfit$centers
   mixture.weights <- as.numeric(table(kfit$cluster))/length(x)
   list(mixture.comp = mixture.comp,
-       mixture.weights = mixture.weights,
-       cluster.memberships = kfit$cluster)
+       mixture.weights = mixture.weights)
 }
 #' EM algorithm for k-component binomial mixture model
 #' @param x observed vector of counts (read counts supporting SNV)
@@ -118,9 +117,6 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
   nstart <- niter
   while(TRUE) {
 
-    # compute expected logliklihood with current guesses
-    ll <- mixLL(x, N, k, mixture.weights, mixture.comp)
-
     # update cluster memberships (eStep)
     class.probs <- updateClassProb(x, N, k, mixture.comp, mixture.weights)
 
@@ -134,6 +130,8 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
     # update binomial probabilites
     mixture.comp <- updateComponents(x, N, class.probs)
 
+    # recompute log-likelihood with current guesses
+    ll <- mixLL(x, N, k, mixture.weights, mixture.comp)
 
     print(paste("The log-like is:", ll))
     print(ll >= oldll)

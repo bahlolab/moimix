@@ -108,32 +108,6 @@ rdirichlet <- function(a) {
 }
 
 
-# n is the number of SNPs S, m is the rate mut_rate, and t is the maximum value, to be set to 1
-# rtexp(n=S, m=mut_rate, t=1)
-# this code is modified from that given at https://stat.ethz.ch/pipermail/r-help/2010-June/242615.html
-# look into alternate distrubition functions
-#' Truncated exponential distribution random number generation
-#'
-#' @description Simulate random numbers from a truncated exponential distribution
-#' @details Simulate SNP alternate allele frequencies from a truncated exponential distribution
-#' Code is modified from that given at https://stat.ethz.ch/pipermail/r-help/2010-June/242615.html
-#' @param n number of random values to return
-#' @param mu rate parameter for exponential
-#' @param t cut-off threshold for truncation
-#' @return n random values from TEXP
-#' @export
-rtexp <- function(n, mu, t) {
-
-  # first compute the inverse CDF for the truncated exponential. u is the quantile
-  itexp <- function(u, mu, t) {
-    -log(1 - u*(1 - exp(-t * mu)))/mu
-  }
-  x <- itexp(runif(n), mu, t)
-  # assert that values lie in [0,t]
-  stopifnot( min(x) >= 0, max(x) <= t )
-  x
-}
-
 #--- Input/Output functions
 #
 # #' Convert VCF file into Matrix format
