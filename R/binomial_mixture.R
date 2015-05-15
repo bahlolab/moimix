@@ -34,7 +34,7 @@ mixLL <- function(x, N, k, mixture.weights, mixture.comp) {
            dbinom(x,
                   size = N,
                   prob = mixture.comp[k]))
-  sum(log(unlist(within.class.ll)))
+  sum(apply(within.class.ll, 1, function(x) log(sum(x))))
 }
 
 
@@ -53,8 +53,7 @@ initEM <- function(x, N, k) {
   mixture.comp <- kfit$centers
   mixture.weights <- as.numeric(table(kfit$cluster))/length(x)
   list(mixture.comp = mixture.comp,
-       mixture.weights = mixture.weights,
-       cluster.memberships = kfit$cluster)
+       mixture.weights = mixture.weights)
 }
 #' EM algorithm for k-component binomial mixture model
 #' @param x observed vector of counts (read counts supporting SNV)
@@ -94,8 +93,14 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
 
   # reads and coverage vectors not same length
   if (length(x) != length(N)) {
-    stop("X and N must have same length")
+    if (length(N) == 1) {
+      message(paste0("Assuming uniform coverage: ", N))
+    }
+    else {
+      stop("X and N must have same length")
+    }
   }
+
   # initialise parameters
   n = length(x)
 
@@ -111,15 +116,17 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
   ll <- 0
   oldll <- 0
 
-  print("Start EM algorithm")
-  print(paste("The parameters (mu, pi): ",
-              paste(c(mixture.comp, mixture.weights), collapse=", ")))
+  if(verbose) {
+    print("Start EM algorithm")
+    print("The initial parameter guesses are :")
+    print("The mixture components mu : (",
+          paste(mixture.comp, collapse=", "), ")")
+    print("The mixture weights pi : (",
+          paste(mixture.weights, collapse = ", "), ")")
+  }
 
   nstart <- niter
   while(TRUE) {
-
-    # compute expected logliklihood with current guesses
-    ll <- mixLL(x, N, k, mixture.weights, mixture.comp)
 
     # update cluster memberships (eStep)
     class.probs <- updateClassProb(x, N, k, mixture.comp, mixture.weights)
@@ -134,9 +141,11 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
     # update binomial probabilites
     mixture.comp <- updateComponents(x, N, class.probs)
 
+    # recompute log-likelihood with current guesses
+    ll <- mixLL(x, N, k, mixture.weights, mixture.comp)
 
-    print(paste("The log-like is:", ll))
-    print(ll >= oldll)
+    if (verbose) { print(paste("The log-like is:", ll)) }
+
     if ((abs(ll - oldll) <= epsilon) && niter) {
       message(paste("EM algorithm converged after ",
                     nstart - niter, "iteration"))
@@ -145,12 +154,15 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
     else {
       niter <- niter - 1
       if (niter == 0) {
-        stop("EM algorithm did not converge.")
+        message("EM algorithm did not converge.")
+        break
       }
     }
     oldll <- ll
 
   }
+  convergence.iter <- (nstart - niter)
+  convergence.alg <- (nstart == 0)
   # update cluster memberships based on final update
   cluster.probs <- updateClassProb(x, N, k, mixture.comp, mixture.weights)
   cluster.memberships <- apply(cluster.probs, 1, which.max)
@@ -160,6 +172,8 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
               cluster.probs = cluster.probs,
               pi = mixture.weights,
               mu = mixture.comp,
-              log.lik = ll))
+              log.lik = ll,
+              converge.iter = convergence.iter,
+              converge.true = convergence.alg))
 
 }
