@@ -118,11 +118,8 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
 
   if(verbose) {
     print("Start EM algorithm")
-    print("The initial parameter guesses are :")
-    print("The mixture components mu : (",
-          paste(mixture.comp, collapse=", "), ")")
-    print("The mixture weights pi : (",
-          paste(mixture.weights, collapse = ", "), ")")
+    print("The initial parameter guesses are (pi, mu):")
+    print(c(mixture.weights, mixture.comp))
   }
 
   nstart <- niter
@@ -162,7 +159,7 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
 
   }
   convergence.iter <- (nstart - niter)
-  convergence.alg <- (nstart == 0)
+  convergence.alg <- (nstart > 0)
   # update cluster memberships based on final update
   cluster.probs <- updateClassProb(x, N, k, mixture.comp, mixture.weights)
   cluster.memberships <- apply(cluster.probs, 1, which.max)

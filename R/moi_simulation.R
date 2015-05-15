@@ -77,6 +77,9 @@ simulateMOI <- function(n.samples,
                           n = n.snps,
                           size = coverage)
 
+  # compute average coverage
+  mean.coverage <- lapply(reads.per.clone,
+                          function(x) rowMeans(x) / coverage)
   # 4. Simulate minor (alternate) allele frequencies from a either
   # truncated exponential distribution with range [0,1] or a beta distribution
   # this is a vector of length S
@@ -89,15 +92,16 @@ simulateMOI <- function(n.samples,
                     FUN = function(i) sapply(aaf, rbinom,
                                              n = moi,
                                              size = 1))
+  geno.props <- lapply(1:n.samples,
+               function(i) rowMeans(reads.per.clone[[i]]) * clone.props[[i]] / coverage)
   # Given the alleles and the reads per clone, what is the number of alt alleles
-  # observed in the absence of sequencing error? first compute a length N list of
-  # K x S matrices containing the count of alt alleles for each clone, sample
-  # and SNP
+  # observed in the absence of sequencing error?
   stopifnot(length(alleles) == length(reads.per.clone))
-  # then sum over columns and transpose to obtain an N x S matrix
+  # Sum over columns and transpose to obtain an N x S matrix
   # containing the count of alt alleles for each sample and SNP
   alt.counts <- t(sapply(1:n.samples,
-                         FUN = function(i) colSums(reads.per.clone[[i]]*alleles[[i]])))
+                         function(i) colSums(reads.per.clone[[i]]*alleles[[i]])))
+
 
   # 6. Simulate the number of sequencing errors per clone, sample and SNP
   # according to a Binomial distribution.
@@ -106,7 +110,7 @@ simulateMOI <- function(n.samples,
                          function(i) matrix(sapply(reads.per.clone[[i]],
                                                          rbinom,
                                                          n= 1,
-                                                         prob = 0),
+                                                         prob = error),
                                                   ncol = n.snps))
   # Calculate the observed error proportion
   obs.error.prop <- sum(sapply(error.counts,
@@ -125,6 +129,7 @@ simulateMOI <- function(n.samples,
   # Return list containing observed read counts and clone proportions
   # and allele frequency distribution and observed error prop
   list(clone.props = clone.props,
+       geno.props = geno.props,
        allele.freq = aaf,
        obs.error.prop = obs.error.prop,
        obs.alt.counts = obs.alt.counts)

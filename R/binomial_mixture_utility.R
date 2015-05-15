@@ -40,6 +40,8 @@ mseMM <- function(mixture, theta) {
   mu.hat <- sort(mixture$mu)
   pi <- sort(theta[1:k])
   mu <- sort(theta[(k+1):(2*k)])
+  print(c(pi, pi.hat))
+  print(c(mu, mu.hat))
   mse <- list(pi.mse = mean((pi - pi.hat)^2),
               mu.mse = mean((mu - mu.hat)^2),
               all.mse = mean((c(pi,mu) - c(pi.hat,mu.hat))^2))
@@ -53,6 +55,7 @@ mseMM <- function(mixture, theta) {
 #' @param N coverage
 #' @param k maximum number of components to estimate
 #' @param method string with information criterion either 'bic' or 'aic'
+#' @export
 autoSelect <- function(x, N, k, method) {
   if(k < 1 | k > 5) {
     stop("Maximum number of components must be ")
