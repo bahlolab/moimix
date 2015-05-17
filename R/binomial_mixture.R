@@ -80,6 +80,7 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
   if (k < 1 | k > 5) {
     stop("Number of mixture components must be between 1 and 5")
   }
+
   # mixture model parameters missing
   if ((is.null(mixture.comp) & !is.null(mixture.weights)) |
         (!is.null(mixture.comp) & is.null(mixture.weights))) {
@@ -94,12 +95,16 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
   # reads and coverage vectors not same length
   if (length(x) != length(N)) {
     if (length(N) == 1) {
+      # range checking
+      stopifnot(0 <= min(x) && max(x) <= N)
       message(paste0("Assuming uniform coverage: ", N))
+
     }
     else {
       stop("X and N must have same length")
     }
   }
+  stopifnot(0 <= min(x) && max(x) <= max(N))
 
   # initialise parameters
   n = length(x)

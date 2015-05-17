@@ -18,7 +18,7 @@
 #' @param n.samples integer number of humans sampled for Plasmodium
 #' @param n.snps integer number of SNPs examined
 #' @param moi integer number of infections per human
-#' @param coverage integer number of reads covering each base
+#' @param coverage integer number of reads covering each base for each isolate
 #' @param error numeric probability of error in base call
 #' @param dirichlet.param integer vector of length 2, specifying mixing
 #' parameters for dirichilet distribution
@@ -68,7 +68,6 @@ simulateMOI <- function(n.samples,
                              m = dirichlet.param[1],
                              a0 = dirichlet.param[2])
 
-  print(dirichlet.alphas)
   # 2b. Simulate the proportion of each clone according to the Dirichlet distribution
   # this is a list of N vectors of length K
   clone.props <- lapply(dirichlet.alphas, rdirichlet)
@@ -78,14 +77,11 @@ simulateMOI <- function(n.samples,
 
   # 3. Simulate the number of reads from each clone from a multinomial dbn
   # this is a list of N matrices of dimension K x S
-  reads.per.clone <- lapply(clone.props, rmultinom,
-                          n = n.snps,
-                          size = coverage)
+  reads.per.clone <- lapply(1:n.samples,
+                            function(i) rmultinom(n = n.snps,
+                                                  size = coverage[i],
+                                                  prob = clone.props[[i]]))
 
-  # compute average coverage
-  mean.per.clone <- lapply(1 : n.samples,
-                          function(i) rowMeans(reads.per.clone[[i]]) *
-                            clone.props[[i]] / coverage)
 
   # 4. Simulate minor (alternate) allele frequencies from a either
   # truncated exponential distribution with range [0,1] or a beta distribution
@@ -99,17 +95,22 @@ simulateMOI <- function(n.samples,
                     FUN = function(i) sapply(aaf, rbinom,
                                              n = moi,
                                              size = 1))
+  # Generate the true proportions of genotypes from a clone
+  # - calculate the counts reads supporting alt allele in SNV
+  alt.alleles.count <- lapply(1:n.samples,
+                              function(i) reads.per.clone[[i]] * alleles[[i]])
+  # - compute the proportion of reads supporting each clone genome-wide
   geno.props <- lapply(1:n.samples,
-               function(i) moi*rowSums(alleles[[i]])/n.snps *
-                 clone.props[[i]])
+               function(i) rowSums(alt.alleles.count[[i]]) /
+                 (moi *n.snps * coverage[i]))
+
 
   # Given the alleles and the reads per clone, what is the number of alt alleles
   # observed in the absence of sequencing error?
-  stopifnot(length(alleles) == length(reads.per.clone))
   # Sum over columns and transpose to obtain an N x S matrix
   # containing the count of alt alleles for each sample and SNP
   alt.counts <- t(sapply(1:n.samples,
-                         function(i) colSums(reads.per.clone[[i]]*alleles[[i]])))
+                         function(i) colSums(alt.alleles.count[[i]])))
 
 
   # 6. Simulate the number of sequencing errors per clone, sample and SNP
@@ -120,7 +121,8 @@ simulateMOI <- function(n.samples,
                                                          rbinom,
                                                          n= 1,
                                                          prob = error),
-                                                  ncol = n.snps))
+                                                  ncol = n.snps,
+                                            byrow = TRUE))
   # Calculate the observed error proportion
   obs.error.prop <- sum(sapply(error.counts,
                                sum)) / (n.samples * n.snps * coverage)
@@ -135,11 +137,9 @@ simulateMOI <- function(n.samples,
   # 7. Compute the observed number of alternate alleles for each sample and SNP
   obs.alt.counts <- alt.counts + error.alt.change
 
-  # Return list containing observed read counts and clone proportions
-  # and allele frequency distribution and observed error prop
+
   list(clone.props = clone.props,
        geno.props = geno.props,
-       mean.per.clone = mean.per.clone,
        allele.freq = aaf,
        obs.error.prop = obs.error.prop,
        obs.alt.counts = obs.alt.counts)

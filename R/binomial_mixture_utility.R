@@ -58,7 +58,7 @@ mseMM <- function(mixture, theta) {
 #' @export
 autoSelect <- function(x, N, k, method) {
   if(k < 1 | k > 5) {
-    stop("Maximum number of components must be ")
+    stop("Maximum number of components must be between 1 and 5")
   }
   if(!(method %in% c("aic", "bic"))) {
     stop("Method must either be aic or bic")
@@ -76,9 +76,6 @@ autoSelect <- function(x, N, k, method) {
   }
 
   min.ic <- which.min(crits)
-
-  print(paste("The ", method, "for each choice k:"))
-  print(paste(1:k, "\t", crits))
 
   results <- data.frame(component = 1:k, values = crits)
   best.model <- model[[min.ic]]
