@@ -7,8 +7,8 @@
 #' Simulate multiplicity of infection in parasite sequencing data
 #'
 #' @details This function simulates MOI data and applies two simple MOI
-#' handling strategies. It assumes that MOI in a population is distributed
-#' according to a Poisson distribution. It requires passing a function as
+#' handling strategies. It assumes that MOI in a population is fixed.
+#' It requires passing a function as
 #' an argument that specifies the minor allele frequency distribution.
 #' The sampling distributions available are either truncated exponential
 #' or beta. The parameters for these distributions are passed as additional
@@ -50,6 +50,10 @@ simulateMOI <- function(n.samples,
   # moi must be between 1 and 5
   stopifnot(moi >= 1 && moi <= 5)
 
+  # coverage must be either same length as n.samples
+  # or length 1
+  stopifnot(length(coverage) == n.samples | length(coverage) == 1)
+
   maf.dist <- match.fun(maf.dist)
   ### I. SIMULATE MULTIPLICITY OF INFECTION DATA
   # Create vector moi of length N
@@ -64,6 +68,7 @@ simulateMOI <- function(n.samples,
                              m = dirichlet.param[1],
                              a0 = dirichlet.param[2])
 
+  print(dirichlet.alphas)
   # 2b. Simulate the proportion of each clone according to the Dirichlet distribution
   # this is a list of N vectors of length K
   clone.props <- lapply(dirichlet.alphas, rdirichlet)
@@ -78,8 +83,10 @@ simulateMOI <- function(n.samples,
                           size = coverage)
 
   # compute average coverage
-  mean.coverage <- lapply(reads.per.clone,
-                          function(x) rowMeans(x) / coverage)
+  mean.per.clone <- lapply(1 : n.samples,
+                          function(i) rowMeans(reads.per.clone[[i]]) *
+                            clone.props[[i]] / coverage)
+
   # 4. Simulate minor (alternate) allele frequencies from a either
   # truncated exponential distribution with range [0,1] or a beta distribution
   # this is a vector of length S
@@ -93,7 +100,9 @@ simulateMOI <- function(n.samples,
                                              n = moi,
                                              size = 1))
   geno.props <- lapply(1:n.samples,
-               function(i) rowMeans(reads.per.clone[[i]]) * clone.props[[i]] / coverage)
+               function(i) moi*rowSums(alleles[[i]])/n.snps *
+                 clone.props[[i]])
+
   # Given the alleles and the reads per clone, what is the number of alt alleles
   # observed in the absence of sequencing error?
   stopifnot(length(alleles) == length(reads.per.clone))
@@ -130,6 +139,7 @@ simulateMOI <- function(n.samples,
   # and allele frequency distribution and observed error prop
   list(clone.props = clone.props,
        geno.props = geno.props,
+       mean.per.clone = mean.per.clone,
        allele.freq = aaf,
        obs.error.prop = obs.error.prop,
        obs.alt.counts = obs.alt.counts)
