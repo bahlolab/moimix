@@ -137,6 +137,11 @@ simulateMOI <- function(n.samples,
   # 7. Compute the observed number of alternate alleles for each sample and SNP
   obs.alt.counts <- alt.counts + error.alt.change
 
+  #8. if errors have reduced counts below 0 or greater than coverage then fix that
+  obs.alt.counts[obs.alt.counts < 0] <- 0
+
+  # at the moment assuming uniform coverage here
+  obs.alt.counts[obs.alt.counts > max(coverage)] <- max(coverage)
 
   list(clone.props = clone.props,
        geno.props = geno.props,
