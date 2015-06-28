@@ -37,6 +37,7 @@
 simulateMOI <- function(n.samples,
                         n.snps,
                         moi,
+                        clone.props = NULL,
                         coverage,
                         error,
                         dirichlet.param,
@@ -54,6 +55,25 @@ simulateMOI <- function(n.samples,
   # or length 1
   stopifnot(length(coverage) == n.samples | length(coverage) == 1)
 
+  if (length(coverage) == 1) {
+    coverage <- rep(coverage, n.samples)
+  }
+
+  # check CLONE PROPS has same length as samples
+  if (!(is.null(clone.props))) {
+    if(length(clone.props) != n.samples) {
+      stop("Non-null clone.props list must have same length as
+           number of samples")
+    }
+    # must have moi equal to given moi
+    stopifnot(all.equal(sapply(clone.props, length),
+                        rep(moi, n.samples)))
+    # must sum to 1
+    stopifnot(all.equal(sapply(clone.props, sum),
+                        rep(1, n.samples)))
+
+
+  }
   maf.dist <- match.fun(maf.dist)
   ### I. SIMULATE MULTIPLICITY OF INFECTION DATA
   # Create vector moi of length N
@@ -64,17 +84,19 @@ simulateMOI <- function(n.samples,
 
   # 2a. Obtain the parameters of the Dirichlet dbn for each person
   # this is a list of N vectors of length K
-  dirichlet.alphas <- lapply(moi.sample, dirichletAlpha,
-                             m = dirichlet.param[1],
-                             a0 = dirichlet.param[2])
+  if(is.null(clone.props)) {
+    dirichlet.alphas <- lapply(moi.sample, dirichletAlpha,
+                               m = dirichlet.param[1],
+                               a0 = dirichlet.param[2])
 
-  # 2b. Simulate the proportion of each clone according to the Dirichlet distribution
-  # this is a list of N vectors of length K
-  clone.props <- lapply(dirichlet.alphas, rdirichlet)
+    # 2b. Simulate the proportion of each clone according to the Dirichlet distribution
+    # this is a list of N vectors of length K
+    clone.props <- lapply(dirichlet.alphas, rdirichlet)
 
-  # check that the sum of clone proportions is one for each person
-  stopifnot(all.equal(sapply(clone.props, sum), rep(1, n.samples)))
-
+    # check that the sum of clone proportions is one for each person
+    stopifnot(all.equal(sapply(clone.props, sum),
+                        rep(1, n.samples)))
+  }
   # 3. Simulate the number of reads from each clone from a multinomial dbn
   # this is a list of N matrices of dimension K x S
   reads.per.clone <- lapply(1:n.samples,
@@ -125,7 +147,7 @@ simulateMOI <- function(n.samples,
                                             byrow = TRUE))
   # Calculate the observed error proportion
   obs.error.prop <- sum(sapply(error.counts,
-                               sum)) / (n.samples * n.snps * coverage)
+                               sum)) / (n.samples * n.snps * sum(coverage))
 
   # Calculate an N x S matrix indicating how sequencing errors will
   # affect the alt allele counts

@@ -104,4 +104,40 @@ binommixCDF <- function(mixture, x, N) {
   return(rowSums(pbinoms))
 }
 
+#' Fisher Information Approximation
+#' 
+#' @description Estimate the Fisher information matrix for 
+#' a bionimal mixture model
+#' 
+#' @param x vector of read counts
+#' @param N vector of coverage at site
+#' @param model fitted mixture model
+#' @return A 2k by 2k Fisher information matrix
+#' @export
+infoMat <- function(x, N, model) {
+  
+  k <- model$k
+  class.probs <- updateClassProb(x, N, k, 
+                                 model$mu,
+                                 model$pi)
+  mat <- matrix(0, ncol = 2*k, nrow = 2*k)
+  # -- second-derivative evaluated at mixture weights
+  dq2dpi2 <- function(class.probs, x, N, pi, i) {
+    -sum(class.probs[,i]/(pi[i]^2)) - sum((1 - class.probs[,i]) / (1 - pi[i])^2)
+  }
+  # -- second-derivative evaluated at mixture components
+  dq2dmu2 <- function(class.probs, x, N, mu, i) {
+    -sum((class.probs[, i] * x )/ (mu[i])^2) -sum(class.probs[,i]*(N-x)/(mu[i])^2)
+  }
+  diag(mat)[1:k] <- sapply(1:k, 
+                           function(i) 
+                             dq2dpi2(class.probs, x, N, model$pi, i))
+  
+  diag(mat)[(k+1):(2*k)] <- sapply(1:k, 
+                                   function(i) 
+                                     dq2dmu2(class.probs, x, N, model$mu, i))
+  
+  return(-mat)
+}
+
 
