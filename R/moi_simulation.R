@@ -163,6 +163,7 @@ simulateMOI <- function(n.samples,
   obs.alt.counts[obs.alt.counts < 0] <- 0
 
   # at the moment assuming uniform coverage here
+  # error here if coverage is a vector
   obs.alt.counts[obs.alt.counts > max(coverage)] <- max(coverage)
 
   list(clone.props = clone.props,

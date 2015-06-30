@@ -9,10 +9,11 @@
 #' @param mixture estimated mixture model
 #' @return The BIC of a model
 #' @export
-bic <- function(mixture) {
+bic <- function(x, N, mixture) {
   # we multiply k by 2 since we estimate
   # 2k paramters in the binommix
-  -2 * mixture$log.lik + 2*mixture$k*log(mixture$n)
+  2*mixture$k*log(mixture$n) -2 * mixLL(x, N, mixture$k, mixture$pi, mixture$mu)
+
 }
 
 #' Akaike Infomation Criterion for binomial mixture model
@@ -20,8 +21,8 @@ bic <- function(mixture) {
 #' @inheritParams bic
 #' @return The AIC of a model
 #' @export
-aic <- function(mixture) {
-  2 * (2*mixture$k - mixture$log.lik)
+aic <- function(x, N, mixture) {
+  2 * (2*mixture$k - mixLL(x, N, mixture$k, mixture$pi, mixture$mu))
 }
 
 #' Mean Square Error for binomial mixture model
@@ -55,34 +56,41 @@ mseMM <- function(mixture, theta) {
 #' @param N coverage
 #' @param k maximum number of components to estimate
 #' @param method string with information criterion either 'bic' or 'aic'
+#' @param ... other parameters passed to binommixEM
 #' @export
-autoSelect <- function(x, N, k, method) {
+autoSelect <- function(x, N, k, method, ...) {
   if(k < 1 | k > 5) {
     stop("Maximum number of components must be between 1 and 5")
   }
   if(!(method %in% c("aic", "bic"))) {
     stop("Method must either be aic or bic")
   }
-  selector <- match.fun(method)
+  if(method == "aic") {
+    selector <- haldane::aic
+  }
+  if(method == "bic") {
+    selector <- haldane::bic
+  }
 
   # initalise
   crits <- c()
   models <- list()
   for (i in 1:k) {
-    model <- binommixEM(x, N, i)
-    ic <- selector(model)
-    models[[i]] <- list(model = model)
+    model <- binommixEM(x, N, i, ...)
+    ic <- selector(x, N, model)
+    models[[i]] <- list(mu = sort(model$mu), pi=sort(model$pi))
     crits[i] <- ic
   }
 
   min.ic <- which.min(crits)
 
   results <- data.frame(component = 1:k, values = crits)
-  best.model <- model[[min.ic]]
+  best.model <- models[[min.ic]]
 
-  return(list(method = method,
-              info.crit = results,
-              model = best.model))
+  return(list(info.crit = results,
+              k = min.ic,
+              mu = best.model$mu,
+              pi = best.model$pi))
 }
 
 #' CDF for binomial mixture model
@@ -91,7 +99,6 @@ autoSelect <- function(x, N, k, method) {
 #'@param x vector of read counts supporting each SNV
 #'@param N vector of coverage at SNV
 #'@return Vector of theoretical quantiles
-
 binommixCDF <- function(mixture, x, N) {
   pi <- mixture$pi
   k <- mixture$k
@@ -105,21 +112,20 @@ binommixCDF <- function(mixture, x, N) {
 }
 
 #' Fisher Information Approximation
-#' 
-#' @description Estimate the Fisher information matrix for 
+#'
+#' @description Estimate the Fisher information matrix for
 #' a bionimal mixture model
-#' 
+#'
 #' @param x vector of read counts
 #' @param N vector of coverage at site
-#' @param model fitted mixture model
+#' @param k number of components
+#' @param mu mixture components
+#' @param pi mixture weights
 #' @return A 2k by 2k Fisher information matrix
 #' @export
-infoMat <- function(x, N, model) {
-  
-  k <- model$k
-  class.probs <- updateClassProb(x, N, k, 
-                                 model$mu,
-                                 model$pi)
+infoMat <- function(x, N, k, mu, pi) {
+
+  class.probs <- updateClassProb(x, N, k, mu, pi)
   mat <- matrix(0, ncol = 2*k, nrow = 2*k)
   # -- second-derivative evaluated at mixture weights
   dq2dpi2 <- function(class.probs, x, N, pi, i) {
@@ -129,14 +135,14 @@ infoMat <- function(x, N, model) {
   dq2dmu2 <- function(class.probs, x, N, mu, i) {
     -sum((class.probs[, i] * x )/ (mu[i])^2) -sum(class.probs[,i]*(N-x)/(mu[i])^2)
   }
-  diag(mat)[1:k] <- sapply(1:k, 
-                           function(i) 
-                             dq2dpi2(class.probs, x, N, model$pi, i))
-  
-  diag(mat)[(k+1):(2*k)] <- sapply(1:k, 
-                                   function(i) 
-                                     dq2dmu2(class.probs, x, N, model$mu, i))
-  
+  diag(mat)[1:k] <- sapply(1:k,
+                           function(i)
+                             dq2dpi2(class.probs, x, N, pi, i))
+
+  diag(mat)[(k+1):(2*k)] <- sapply(1:k,
+                                   function(i)
+                                     dq2dmu2(class.probs, x, N, mu, i))
+
   return(-mat)
 }
 

@@ -97,7 +97,9 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
     if (length(N) == 1) {
       # range checking
       stopifnot(0 <= min(x) && max(x) <= N)
-      message(paste0("Assuming uniform coverage: ", N))
+      if(verbose) {
+        message(paste0("Assuming uniform coverage: ", N))
+      }
 
     }
     else {
@@ -149,8 +151,10 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
     if (verbose) { print(paste("The log-like is:", ll)) }
 
     if ((abs(ll - oldll) <= epsilon) && niter) {
-      message(paste("EM algorithm converged after ",
-                    nstart - niter, "iteration"))
+      if(verbose){
+        message(paste("EM algorithm converged after ",
+                      nstart - niter, "iteration"))
+      }
       break
     }
     else {
