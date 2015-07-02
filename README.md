@@ -1,2 +1,1 @@
-# Haldane - an R package for malaria genomics
-
+# moimix: R package for evaluating multiplicity of infection in malaria parasites
