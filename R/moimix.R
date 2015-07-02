@@ -1,7 +1,7 @@
-#' Analayse whole-genome sequencing data from malaria parasites
+#' Evaluate muliplicity of infection in malaria parasites
 #'
-#' \pkg{haldane} enables population genetics analysis on Variant Call Format
-#' (VCF) files obtained from WGS experiments.
+#' \pkg{moimix} enables the estimation of MOI from SNV data and to evaluate
+#' the effect of MOI on SNV data.
 #'
 #' @docType package
 #' @name haldane
