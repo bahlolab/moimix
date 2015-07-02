@@ -1,16 +1,15 @@
-Package: haldane
-Title: haldane: Tools for malaria genomics
-Version: 0.0.0.9000
+Package: moimix
+Title: moimix: estimating mulitplicity of infection in malaria parasites
+Version: 0.0.0.0
 Authors@R: "Stuart Lee <lee.s@wehi.edu.au> [aut, cre]"
-Description: R package to manipulate and analyse next generation sequencing data from malaria
-    parasites. haldane can be used to simulate data under multipcicity of
-    infection, population genetics analysis of isolate populations, and
-    simulation of data produced by Fluidigm dynamic array technology.
+Description: R package to evaluate multiplicity of infection (MOI) of malaria 
+    parasites using mixture models. moimix can be used to simulate massively
+    single nucleotide variant (SNV) data from isolates with MOI. It provides
+    methods to estimate MOI using an EM algorithm. 
 Depends: 
     R (>= 3.1.1)
 License: MIT + file LICENSE
 LazyData: true
-Imports: SeqArray, ggbio, ggplot2, GenomicRanges, S4Vectors
 Suggests: testthat,
     knitr
 VignetteBuilder: knitr
