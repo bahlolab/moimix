@@ -24,33 +24,33 @@ updateWeights <- function(class.probs) {
 }
 #' update probs for binomials
 updateComponents <- function(x, N, class.probs) {
-  colSums(x * class.probs) / colSums(N * class.probs)
+  colSums(x * class.probs) / (colSums(N*class.probs))
 }
 
-#' Likelihood function for mixture model
-mixLL <- function(x, N, k, mixture.weights, mixture.comp) {
-  within.class.ll <- sapply(1:k,
-         FUN = function(k) mixture.weights[k]*
-           dbinom(x,
-                  size = N,
-                  prob = mixture.comp[k]))
-  sum(apply(within.class.ll, 1, function(x) log(sum(x))))
+#' Expected log-Likelihood function for mixture model
+mixLL <- function(x, N, k, class.probs, mixture.comp, mixture.weights) {
+    # generate log(pi_k) + log(dbinom(x, N, mu_k))
+    # gives us a k by length(x) matrix
+    within.class.ll <- apply(sapply(mixture.comp, dbinom,
+                              x = x,
+                              size = N,
+                              log = TRUE), 1, 
+                             function(i) i + log(mixture.weights))
+    # we also have a length(x) by k responsibilites matrix
+    # take dot product of rows with columns then sum to get
+    # expected log-likelihood
+    sum(sapply(1:length(x), 
+               function(i) sum(class.probs[i,] * within.class.ll[,i])))
+    
 }
 
-
-# #' return pdf of two component binomial mixture
-# dbinommix <- function(x, N, p, q, f) {
-#   m1 <- dbinom(x, size = n1, prob = p)
-#   m2 <- dbinom(x, size = n2, prob = q)
-#   f * m1 + (1-f) * m2
-# }
 
 #' Initialise mixture model parameters for EM
 #' uses kmeans on proportions
 initEM <- function(x, N, k) {
   # use kmeans with k clusters
   kfit <- kmeans(x/N, k, nstart = 20)
-  mixture.comp <- kfit$centers
+  mixture.comp <- as.numeric(kfit$centers)
   mixture.weights <- as.numeric(table(kfit$cluster))/length(x)
   list(mixture.comp = mixture.comp,
        mixture.weights = mixture.weights)
@@ -136,17 +136,14 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
     class.probs <- updateClassProb(x, N, k, mixture.comp, mixture.weights)
 
     # mStep
-    # update class memberships
-    zhat <- apply(class.probs, 1, which.max)
-
     # update mixture proportions
     mixture.weights <- updateWeights(class.probs)
 
     # update binomial probabilites
     mixture.comp <- updateComponents(x, N, class.probs)
 
-    # recompute log-likelihood with current guesses
-    ll <- mixLL(x, N, k, mixture.weights, mixture.comp)
+    # recompute expected log-likelihood with current guesses
+    ll <- mixLL(x, N, k, class.probs, mixture.comp, mixture.weights)
 
     if (verbose) { print(paste("The log-like is:", ll)) }
 
