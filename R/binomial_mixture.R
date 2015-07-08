@@ -16,6 +16,7 @@ updateClassProb <- function(x, N, k, mixture.comp, mixture.weights) {
   }
   probs <- sapply(1:k, FUN = function(k) classProb(x, k))
   probs / rowSums(probs)
+  
 }
 
 #' update class weights
@@ -24,23 +25,26 @@ updateWeights <- function(class.probs) {
 }
 #' update probs for binomials
 updateComponents <- function(x, N, class.probs) {
-  colSums(x * class.probs) / (colSums(N*class.probs))
+  colSums(class.probs*x) / colSums(class.probs*N)
 }
 
 #' Expected log-Likelihood function for mixture model
 mixLL <- function(x, N, k, class.probs, mixture.comp, mixture.weights) {
     # generate log(pi_k) + log(dbinom(x, N, mu_k))
-    # gives us a k by length(x) matrix
-    within.class.ll <- apply(sapply(mixture.comp, dbinom,
-                              x = x,
-                              size = N,
-                              log = TRUE), 1, 
-                             function(i) i + log(mixture.weights))
+    # gives us a length(x) by k
+    within.class.ll <- sapply(1:k,
+                              function(i) {
+                                  log(mixture.weights[i]) +
+                                      dbinom(x, size = N, prob=mixture.comp[i], log = TRUE)
+                              } )
+    print(mixture.comp)
+    print(mixture.weights)
+    #print(within.class.ll)
+    #print(class.probs)
     # we also have a length(x) by k responsibilites matrix
     # take dot product of rows with columns then sum to get
     # expected log-likelihood
-    sum(sapply(1:length(x), 
-               function(i) sum(class.probs[i,] * within.class.ll[,i])))
+    sum(rowSums(within.class.ll*class.probs))
     
 }
 
@@ -138,10 +142,10 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
     # mStep
     # update mixture proportions
     mixture.weights <- updateWeights(class.probs)
-
+    print(mixture.weights)
     # update binomial probabilites
     mixture.comp <- updateComponents(x, N, class.probs)
-
+    print(mixture.comp)
     # recompute expected log-likelihood with current guesses
     ll <- mixLL(x, N, k, class.probs, mixture.comp, mixture.weights)
 
