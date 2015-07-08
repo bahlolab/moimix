@@ -1,4 +1,4 @@
 library(testthat)
-library(haldane)
+library(moimix)
 
-test_check("haldane")
+test_check("moimix")
