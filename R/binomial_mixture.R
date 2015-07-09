@@ -11,40 +11,58 @@ collapseProbs <- function(p) { ifelse(p > 0.5, 1-p, p)}
 
 #' Update class probabilities (i.e compute tau in Estep)
 updateClassProb <- function(x, N, k, mixture.comp, mixture.weights) {
-  classProb <- function(x, i) {
-    mixture.weights[i] * dbinom(x, size = N, prob = mixture.comp[i])
-  }
-  probs <- sapply(1:k, FUN = function(k) classProb(x, k))
-  probs / rowSums(probs)
-  
+  #classProb <- function(x, i) {
+  #  mixture.weights[i] * dbinom(x, size = N, prob = mixture.comp[i])
+  #}
+  probs <- sapply(1:k, FUN = function(j) 
+      mixture.weights[j] * dbinom(x, size = N, prob = mixture.comp[j]))
+  denom <- rowSums(probs)
+  tau <- probs / denom
+  tau  
 }
 
 #' update class weights
 updateWeights <- function(class.probs) {
-  colMeans(class.probs)
+    colMeans(class.probs)
 }
 #' update probs for binomials
 updateComponents <- function(x, N, class.probs) {
   colSums(class.probs*x) / colSums(class.probs*N)
 }
 
+#' log-Likelihood function for mixture model
+# mixLL <- function(x, N, k, mixture.comp, mixture.weights) {
+#     # generate log(pi_k) + log(dbinom(x, N, mu_k))
+#     # gives us a length(x) by k
+#     within.class.ll <- sapply(1:k,
+#                               function(i) {
+#                                   log(mixture.weights[i]) +
+#                                       dbinom(x, size = N, prob=mixture.comp[i], log = TRUE)
+#                               } )
+#     print(mixture.comp)
+#     print(mixture.weights)
+#     #print(within.class.ll)
+#     #print(class.probs)
+#     # we also have a length(x) by k responsibilites matrix
+#     # take dot product of rows with columns then sum to get
+#     # expected log-likelihood
+#     sum(rowSums(within.class.ll*class.probs))
+#     
+# }
 #' Expected log-Likelihood function for mixture model
 mixLL <- function(x, N, k, class.probs, mixture.comp, mixture.weights) {
     # generate log(pi_k) + log(dbinom(x, N, mu_k))
-    # gives us a length(x) by k
-    within.class.ll <- sapply(1:k,
-                              function(i) {
-                                  log(mixture.weights[i]) +
-                                      dbinom(x, size = N, prob=mixture.comp[i], log = TRUE)
-                              } )
-    print(mixture.comp)
-    print(mixture.weights)
-    #print(within.class.ll)
-    #print(class.probs)
+    # gives us a k by length(x) matrix
+    within.class.ll <- apply(sapply(mixture.comp, dbinom,
+                                    x = x,
+                                    size = N,
+                                    log = TRUE), 1, 
+                             function(i) i + log(mixture.weights))
     # we also have a length(x) by k responsibilites matrix
     # take dot product of rows with columns then sum to get
     # expected log-likelihood
-    sum(rowSums(within.class.ll*class.probs))
+    sum(sapply(1:length(x), 
+               function(i) sum(class.probs[i,] * within.class.ll[,i])))
     
 }
 
@@ -55,9 +73,9 @@ initEM <- function(x, N, k) {
   # use kmeans with k clusters
   kfit <- kmeans(x/N, k, nstart = 20)
   mixture.comp <- as.numeric(kfit$centers)
-  mixture.weights <- as.numeric(table(kfit$cluster))/length(x)
-  list(mixture.comp = mixture.comp,
-       mixture.weights = mixture.weights)
+  mixture.weights <- tabulate(kfit$cluster)/length(x)
+  list(mixture.comp = sort(mixture.comp),
+       mixture.weights = sort(mixture.weights))
 }
 #' EM algorithm for k-component binomial mixture model
 #' @param x observed vector of counts (read counts supporting SNV)
@@ -118,9 +136,14 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
   # if mixture model parameters not supplied
   # then guess them using k-means
   if (is.null(c(mixture.comp,mixture.weights))) {
-    init.params <- initEM(x, N, k)
-    mixture.comp <- init.params$mixture.comp
-    mixture.weights <- init.params$mixture.weights
+      init.params <- initEM(x, N, k)
+      mixture.comp <- init.params$mixture.comp
+      mixture.weights <- init.params$mixture.weights
+  }
+  else {
+      # sort paramters for identifiability
+      mixture.comp <- sort(mixture.comp)
+      mixture.weights <- sort(mixture.weights)
   }
 
   # initialse log-likelihoods
@@ -135,17 +158,17 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
 
   nstart <- niter
   while(TRUE) {
-
+    
+    oldll <- ll
+      
     # update cluster memberships (eStep)
     class.probs <- updateClassProb(x, N, k, mixture.comp, mixture.weights)
 
     # mStep
     # update mixture proportions
     mixture.weights <- updateWeights(class.probs)
-    print(mixture.weights)
     # update binomial probabilites
     mixture.comp <- updateComponents(x, N, class.probs)
-    print(mixture.comp)
     # recompute expected log-likelihood with current guesses
     ll <- mixLL(x, N, k, class.probs, mixture.comp, mixture.weights)
 
@@ -165,7 +188,6 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
         break
       }
     }
-    oldll <- ll
 
   }
   convergence.iter <- (nstart - niter)

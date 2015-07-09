@@ -30,7 +30,7 @@
 #'  obs.error.prop: the total observed error proportion
 #'  obs.alt.counts: A matrix of size n.samples by n.snps containing the
 #'  observed number of reads in support of each SNP.
-#' @import foreach
+#' @importFrom foreach foreach
 #' @importFrom MCMCpack rdirichlet
 #' @export
 simulateMOI <- function(n.samples,
@@ -94,7 +94,6 @@ simulateMOI <- function(n.samples,
     reads.per.clone <- foreach(i=1:n.samples) %dopar% {
         rmultinom(n = n.snps, size = coverage[i], prob = clone.props[i,])
     }
-    print(reads.per.clone)    
     # Simulate minor (alternate) allele frequencies from a either
     # truncated exponential distribution with range [0,1] or a beta distribution
     # this is a vector of length S
@@ -102,6 +101,11 @@ simulateMOI <- function(n.samples,
     geno.props <- foreach(i=1:n.samples, .combine=rbind) %dopar% {
         runif(moi)
     }
+    # if samples is equal to 1, then force to be a matrix
+    geno.props <- matrix(geno.props, 
+                         nrow = n.samples, 
+                         ncol = moi, 
+                         byrow = TRUE )
     # 5. Simulate alleles for each clone at each SNP according to a Bernouilli
     # distribution using AAFs from (4)  want a K x S matrix of alleles for each
     # sample, i.e. the haplotypes of each clone store in a list of length N
@@ -114,10 +118,6 @@ simulateMOI <- function(n.samples,
     alt.alleles.count <- foreach(i=1:n.samples) %dopar% {
         reads.per.clone[[i]] * alleles[[i]]
     }
-    #     # - compute the proportion of reads supporting each clone genome-wide
-    #     geno.props <- lapply(1:n.samples,
-    #                          function(i) rowSums(alt.alleles.count[[i]]) /
-    #                              (moi *n.snps * coverage[i]))
     
     
     # Given the alleles and the reads per clone, what is the number of alt alleles
