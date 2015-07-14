@@ -22,7 +22,7 @@
 #'  aaf an n.snps vector of under SNV probabilities
 #'  reads an n.samples by n.snps matrix containing read counts supporting each SNV 
 #' @importFrom MCMCpack rdirichlet
-#' 
+#' @import foreach
 #' @export
 
 simulate_moi <- function(n.samples, n.snps, moi, coverage, 
@@ -32,7 +32,8 @@ simulate_moi <- function(n.samples, n.snps, moi, coverage,
     #-- todo
     # step 1, generate underlying parameters
     if (is.null(pi.true)) {
-        pi.true <- MCMCpack::rdirichlet(n.samples, alpha = rep(1, moi))
+        pi.true <- t(MCMCpack::rdirichlet(n.samples, 
+                                          alpha = rep(1, moi)))
         
     }
     
@@ -40,18 +41,32 @@ simulate_moi <- function(n.samples, n.snps, moi, coverage,
         # produces an moi by n.samples
         mu.true <- replicate(n.samples, runif(moi))
     }
-    
+    print(dim(pi.true)); print(pi.true)
+    print(dim(mu.true)); print(mu.true)
     # generate mixture indexes for each SNV for each isolate
     # produce an n.samples by n.snps matrix with assignments
-    clusters <- apply(pi.true, 1, 
-                      function(p) sample(1:moi, 
-                                         n.snps, 
-                                         replace = TRUE, 
-                                         prob = p)) 
+    clusters <- foreach(i=1:n.samples, .combine = cbind) %do% {
+        sample(1:moi, n.snps, replace = TRUE, prob = pi.true[,i])
+    } 
+    print(dim(clusters)); print(clusters)
     # generate underlying SNV frequenciences
     aaf.dist <- match.fun(aaf.dist)
     aaf <- aaf.dist(n=n.snps, ...)
     # conditional probabilities of observing each SNV given underlying
     # clonal genotype
-    
+    # generate matrix of assignments
+    sample.p <- foreach(i =1:n.samples, .combine = cbind) %do% {
+        mu.true[clusters[,i],i]
+    }
+    # multiply by the frequency of each alternate allele 
+    sample.p <- sample.p * aaf
+    # generate observed read counts in support of each SNV for each clone
+    read.counts <- foreach(i = 1:n.samples, .combine = cbind) %do% {
+        rbinom(n.snps, size = coverage, prob = sample.p[,i])
+    }
+    # generate errors -- TODO
+    return(list(pi.true = pi.true, 
+                mu.true = mu.true,
+                
+                read.counts = read.counts))
 }
