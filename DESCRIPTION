@@ -10,12 +10,7 @@ Depends:
     R (>= 3.1.1)
 License: MIT + file LICENSE
 LazyData: true
-<<<<<<< HEAD
-Imports: MCMCpack,
-    foreach
-=======
 Imports: MCMCpack, foreach
->>>>>>> a16f843440b88be29656e6f75508055addcb067b
 Suggests: testthat,
     knitr
 VignetteBuilder: knitr
