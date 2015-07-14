@@ -12,6 +12,7 @@
 #' @param n.snps number of SNPs observed
 #' @param moi number of clonal infections
 #' @param coverage vector of total coverage per sample
+#' @param error probability of error in read counts
 #' @param clonal.props optional matrix of true mixture proportions
 #' @param geno.props optional matrix of true mixture components 
 #' @param aaf.dist  sampling distribution for SNV frequencies
@@ -20,16 +21,66 @@
 #'  pi.true an n.samples by moi matrix containing true clonal proportions
 #'  mu.true an n.samplps by moi matrix containing true genotype proportions
 #'  aaf an n.snps vector of under SNV probabilities
-#'  reads an n.samples by n.snps matrix containing read counts supporting each SNV 
+#'  read.counts an n.samples by n.snps matrix containing read counts supporting each SNV
+#'  error.counts an n.samples by n.snps matrix containing number of error reads 
 #' @importFrom MCMCpack rdirichlet
-#' @import foreach
 #' @export
 
-simulate_moi <- function(n.samples, n.snps, moi, coverage, 
-                         pi.true = NULL, mu.true = NULL, 
+simulate_moi <- function(n.samples, n.snps, moi, coverage, error,
+                         pi.true = NULL, mu.true = NULL, aaf = NULL,
                          aaf.dist, ...) {
     # I/0 checking
-    #-- todo
+    if (moi < 2 || moi > 5) {
+        stop("Number of infections must be between 2 and 5, inclusive")
+    }
+    
+    
+    if (length(coverage) != n.samples) {
+        stop("coverage vector must have same length as n.samples")
+    }
+    
+    if(error > 1 || error < 0) {
+        stop("Error probability must be between 0 and 1")
+    }
+    
+    # check clonal mixture matrix
+    if(!is.null(pi.true)) {
+        if(!inherits(pi.true, "matrix")) {
+            stop("pi.true must be a matrix.")
+        }
+        
+        if(!all(dim(pi.true) == c(moi, n.samples))) {
+            stop("pi.true must have dimensions moi by n.samples")
+        }
+        
+        check.sums <- colSums(pi.true)
+        if(!all.equal(sum(check.sums), n.samples)) {
+            stop("Columns of pi.true must sum to 1.")
+        }
+        
+    }
+    
+    # check genotype proportion matrix
+    if(!is.null(mu.true)) {
+        if(!inherits(mu.true, "matrix")) {
+            stop("mu.true must be a matrix")
+        }
+        
+        if(!all(dim(mu.true) == c(moi, n.samples))) {
+            stop("mu.true must have dimensions moi by n.samples")
+        }
+        
+        if(any(mu.ture < 0) || any(mu.true > 1)) {
+            stop("All entries of mu.true must be between 0 and 1.")
+        }
+    }
+    
+    if(!is.null(aaf)) {
+        if(length(aaf) != n.snps) {
+            stop("aaf must have length n.snps")
+        }
+    }
+    
     # step 1, generate underlying parameters
     if (is.null(pi.true)) {
         pi.true <- t(MCMCpack::rdirichlet(n.samples, 
@@ -41,32 +92,56 @@ simulate_moi <- function(n.samples, n.snps, moi, coverage,
         # produces an moi by n.samples
         mu.true <- replicate(n.samples, runif(moi))
     }
-    print(dim(pi.true)); print(pi.true)
-    print(dim(mu.true)); print(mu.true)
     # generate mixture indexes for each SNV for each isolate
     # produce an n.samples by n.snps matrix with assignments
     clusters <- foreach(i=1:n.samples, .combine = cbind) %do% {
         sample(1:moi, n.snps, replace = TRUE, prob = pi.true[,i])
     } 
-    print(dim(clusters)); print(clusters)
     # generate underlying SNV frequenciences
-    aaf.dist <- match.fun(aaf.dist)
-    aaf <- aaf.dist(n=n.snps, ...)
+    if (is.null(aaf)) {
+        aaf.dist <- match.fun(aaf.dist)
+        aaf <- aaf.dist(n=n.snps, ...)
+    }
     # conditional probabilities of observing each SNV given underlying
     # clonal genotype
     # generate matrix of assignments
     sample.p <- foreach(i =1:n.samples, .combine = cbind) %do% {
         mu.true[clusters[,i],i]
     }
+    
+    # generate whether SNV is observed using Bernoulli distribution
+    snv.observed <- foreach(i = 1:n.samples, .combine = cbind) %do% {
+        rbinom(n.snps, size = 1, prob = aaf)
+    }
     # multiply by the frequency of each alternate allele 
-    sample.p <- sample.p * aaf
+    sample.p <- snv.observed * sample.p
     # generate observed read counts in support of each SNV for each clone
     read.counts <- foreach(i = 1:n.samples, .combine = cbind) %do% {
-        rbinom(n.snps, size = coverage, prob = sample.p[,i])
+        rbinom(n.snps, size = coverage[i], prob = sample.p[,i])
     }
-    # generate errors -- TODO
+    
+    error.counts <- matrix(0, 
+                           ncol = n.samples, 
+                           nrow = n.snps)
+    
+    if (error > 0) {
+        
+        error.counts <- foreach(i = 1:n.samples, .combine = cbind) %do% {
+            rbinom(n.snps, size = coverage[i], prob = error)
+        }
+        
+        
+        read.counts <- read.counts - error.counts
+        read.counts[read.counts < 0] <- 0
+        
+    }    
+    
+    
     return(list(pi.true = pi.true, 
                 mu.true = mu.true,
-                
-                read.counts = read.counts))
+                moi = clusters,
+                aaf = aaf,
+                read.counts = read.counts,
+                error.counts = error.counts))
+    
 }
