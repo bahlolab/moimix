@@ -11,23 +11,27 @@ collapseProbs <- function(p) { ifelse(p > 0.5, 1-p, p)}
 
 #' Update class probabilities (i.e compute tau in Estep)
 updateClassProb <- function(x, N, k, mixture.comp, mixture.weights) {
-  #classProb <- function(x, i) {
-  #  mixture.weights[i] * dbinom(x, size = N, prob = mixture.comp[i])
-  #}
-  probs <- sapply(1:k, FUN = function(j) 
-      mixture.weights[j] * dbinom(x, size = N, prob = mixture.comp[j]))
-  denom <- rowSums(probs)
-  tau <- probs / denom
-  tau  
+    #classProb <- function(x, i) {
+    #  mixture.weights[i] * dbinom(x, size = N, prob = mixture.comp[i])
+    #}
+    # shift everything into log space to avoid underflow    
+    probs <- sapply(1:k, FUN = function(j) 
+        mixture.weights[j] * dbinom(x, 
+                                    size = N, 
+                                    prob = mixture.comp[j]))
+    denom <- log(rowSums(probs))
+    tau <- log(probs) - denom
+    tau  
 }
 
 #' update class weights
 updateWeights <- function(class.probs) {
-    colMeans(class.probs)
+    colMeans(exp(class.probs))
 }
 #' update probs for binomials
 updateComponents <- function(x, N, class.probs) {
-  colSums(class.probs*x) / colSums(class.probs*N)
+    tau <- exp(class.probs)        
+    colSums(tau*x) / colSums(tau*N)
 }
 
 #' log-Likelihood function for mixture model
@@ -61,8 +65,9 @@ mixLL <- function(x, N, k, class.probs, mixture.comp, mixture.weights) {
     # we also have a length(x) by k responsibilites matrix
     # take dot product of rows with columns then sum to get
     # expected log-likelihood
+    tau <- exp(class.probs)
     sum(sapply(1:length(x), 
-               function(i) sum(class.probs[i,] * within.class.ll[,i])))
+               function(i) sum(tau[i,] * within.class.ll[,i])))
     
 }
 
@@ -162,6 +167,7 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
     oldll <- ll
       
     # update cluster memberships (eStep)
+    # print out is logged to avoid underflow
     class.probs <- updateClassProb(x, N, k, mixture.comp, mixture.weights)
 
     # mStep
@@ -172,7 +178,10 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
     # recompute expected log-likelihood with current guesses
     ll <- mixLL(x, N, k, class.probs, mixture.comp, mixture.weights)
 
-    if (verbose) { print(paste("The log-like is:", ll)) }
+    if (verbose) {
+        print(paste("Current estimates are", c(mixture.weights, mixture.comp))) 
+        print(paste("The log-like is:", ll)) 
+    }
 
     if ((abs(ll - oldll) <= epsilon) && niter) {
       if(verbose){
@@ -192,13 +201,9 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
   }
   convergence.iter <- (nstart - niter)
   convergence.alg <- (nstart > 0)
-  # update cluster memberships based on final update
-  cluster.probs <- updateClassProb(x, N, k, mixture.comp, mixture.weights)
-  cluster.memberships <- apply(cluster.probs, 1, which.max)
+  
   return(list(n = n,
               k = k,
-              cluster.memberships = cluster.memberships,
-              cluster.probs = cluster.probs,
               pi = mixture.weights,
               mu = mixture.comp,
               log.lik = ll,
