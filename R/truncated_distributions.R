@@ -123,36 +123,36 @@ rtbeta <- function(n, shape1, shape2, lower = 0, upper = 1) {
   return(x)
 }
 
-# -- likelihood and methods of moments function
-beta.mom <- function(x, lower = 0.01, upper = 100) {
-  # method of moments for a Beta distribution
-  x.bar <- mean(x)
-  n <- length(x)
-  v <- var(x) * (n - 1)/n
-  R <- 1/x.bar - 1
-
-  f <- function(a) {
-    # note: undefined when a=0
-    R * a^2/((a/x.bar)^2 * (a/x.bar + 1)) - v
-  }
-
-  u <- uniroot(f, c(lower, upper))
-
-  return(c(shape1 = u$root, shape2 = u$root * R))
-}
-
-# log-likelihood for truncated distribution
-lltrunc_beta <- function(shape.par, samples, low = 0, high = 1) {
-  shape1 = shape.par[1]
-  shape2 = shape.par[2]
-  likelihood <- dtrunc_beta(samples, shape1, shape2, low, high)
-  -sum(log(likelihood))
-}
-
-dtpois <- function(xs, threshold, lambda) {
-  ifelse(xs > threshold, dpois(xs, lambda) / ppois(threshold, lambda, lower.tail = FALSE), 0) }
-
-# negative log-likelihood for truncated poisson
-ll_dtpois <- function(xs, threshold, lambda) {
-  -sum(log(dtpois(xs, threshold, lambda)))
-}
+# # -- likelihood and methods of moments function
+# beta.mom <- function(x, lower = 0.01, upper = 100) {
+#   # method of moments for a Beta distribution
+#   x.bar <- mean(x)
+#   n <- length(x)
+#   v <- var(x) * (n - 1)/n
+#   R <- 1/x.bar - 1
+# 
+#   f <- function(a) {
+#     # note: undefined when a=0
+#     R * a^2/((a/x.bar)^2 * (a/x.bar + 1)) - v
+#   }
+# 
+#   u <- uniroot(f, c(lower, upper))
+# 
+#   return(c(shape1 = u$root, shape2 = u$root * R))
+# }
+# 
+# # log-likelihood for truncated distribution
+# lltrunc_beta <- function(shape.par, samples, low = 0, high = 1) {
+#   shape1 = shape.par[1]
+#   shape2 = shape.par[2]
+#   likelihood <- dtrunc_beta(samples, shape1, shape2, low, high)
+#   -sum(log(likelihood))
+# }
+# 
+# dtpois <- function(xs, threshold, lambda) {
+#   ifelse(xs > threshold, dpois(xs, lambda) / ppois(threshold, lambda, lower.tail = FALSE), 0) }
+# 
+# # negative log-likelihood for truncated poisson
+# ll_dtpois <- function(xs, threshold, lambda) {
+#   -sum(log(dtpois(xs, threshold, lambda)))
+# }

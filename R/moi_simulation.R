@@ -30,7 +30,6 @@
 #'  obs.error.prop: the total observed error proportion
 #'  obs.alt.counts: A matrix of size n.samples by n.snps containing the
 #'  observed number of reads in support of each SNP.
-#' @importFrom foreach foreach
 #' @importFrom MCMCpack rdirichlet
 #' @export
 simulateMOI <- function(n.samples,

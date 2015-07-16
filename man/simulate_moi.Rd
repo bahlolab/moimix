@@ -4,8 +4,8 @@
 \alias{simulate_moi}
 \title{Simple simulation of MOI SNV data}
 \usage{
-simulate_moi(n.samples, n.snps, moi, coverage, pi.true = NULL,
-  mu.true = NULL, aaf.dist, ...)
+simulate_moi(n.samples, n.snps, moi, coverage, error, pi.true = NULL,
+  mu.true = NULL, aaf = NULL, aaf.dist, ...)
 }
 \arguments{
 \item{n.samples}{number of infected hosts in population}
@@ -15,6 +15,8 @@ simulate_moi(n.samples, n.snps, moi, coverage, pi.true = NULL,
 \item{moi}{number of clonal infections}
 
 \item{coverage}{vector of total coverage per sample}
+
+\item{error}{probability of error in read counts}
 
 \item{aaf.dist}{sampling distribution for SNV frequencies}
 
@@ -29,7 +31,8 @@ A list containing the following elements
  pi.true an n.samples by moi matrix containing true clonal proportions
  mu.true an n.samplps by moi matrix containing true genotype proportions
  aaf an n.snps vector of under SNV probabilities
- reads an n.samples by n.snps matrix containing read counts supporting each SNV
+ read.counts an n.samples by n.snps matrix containing read counts supporting each SNV
+ error.counts an n.samples by n.snps matrix containing number of error reads
 }
 \description{
 Generate read count data in support of SNVs partioned by

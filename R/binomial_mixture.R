@@ -25,34 +25,25 @@ updateClassProb <- function(x, N, k, mixture.comp, mixture.weights) {
 }
 
 #' update class weights
-updateWeights <- function(class.probs) {
-    colMeans(exp(class.probs))
+updateWeights <- function(tau) {
+    colMeans(tau)
 }
 #' update probs for binomials
-updateComponents <- function(x, N, class.probs) {
-    tau <- exp(class.probs)        
+updateComponents <- function(x, N, tau) {
     colSums(tau*x) / colSums(tau*N)
 }
 
-#' log-Likelihood function for mixture model
-# mixLL <- function(x, N, k, mixture.comp, mixture.weights) {
-#     # generate log(pi_k) + log(dbinom(x, N, mu_k))
-#     # gives us a length(x) by k
-#     within.class.ll <- sapply(1:k,
-#                               function(i) {
-#                                   log(mixture.weights[i]) +
-#                                       dbinom(x, size = N, prob=mixture.comp[i], log = TRUE)
-#                               } )
-#     print(mixture.comp)
-#     print(mixture.weights)
-#     #print(within.class.ll)
-#     #print(class.probs)
-#     # we also have a length(x) by k responsibilites matrix
-#     # take dot product of rows with columns then sum to get
-#     # expected log-likelihood
-#     sum(rowSums(within.class.ll*class.probs))
-#     
-# }
+#' full mstep combine pi and mu
+mStep <- function(x, N, class.probs) {
+    # take inverse (get out of log-space)
+    tau <- exp(class.probs)
+    mixture.comp <- updateComponents(x, N, tau)
+    mixture.weights <- updateWeights(tau)
+    list(mixture.comp = mixture.comp, 
+         mixture.weights = mixture.weights)
+    
+}
+
 #' Expected log-Likelihood function for mixture model
 mixLL <- function(x, N, k, class.probs, mixture.comp, mixture.weights) {
     # generate log(pi_k) + log(dbinom(x, N, mu_k))
@@ -71,16 +62,15 @@ mixLL <- function(x, N, k, class.probs, mixture.comp, mixture.weights) {
     
 }
 
-
 #' Initialise mixture model parameters for EM
 #' uses kmeans on proportions
 initEM <- function(x, N, k) {
-  # use kmeans with k clusters
-  kfit <- kmeans(x/N, k, nstart = 20)
-  mixture.comp <- as.numeric(kfit$centers)
-  mixture.weights <- tabulate(kfit$cluster)/length(x)
-  list(mixture.comp = sort(mixture.comp),
-       mixture.weights = sort(mixture.weights))
+    p <- as.matrix(x/N)    
+    kfit <- kmeans(p, k, nstart = 20)
+    mixture.comp <- as.numeric(kfit$centers)
+    mixture.weights <- tabulate(kfit$cluster)/length(x)
+    list(mixture.comp = mixture.comp,
+         mixture.weights = mixture.weights)
 }
 #' EM algorithm for k-component binomial mixture model
 #' @param x observed vector of counts (read counts supporting SNV)
@@ -145,11 +135,6 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
       mixture.comp <- init.params$mixture.comp
       mixture.weights <- init.params$mixture.weights
   }
-  else {
-      # sort paramters for identifiability
-      mixture.comp <- sort(mixture.comp)
-      mixture.weights <- sort(mixture.weights)
-  }
 
   # initialse log-likelihoods
   ll <- 0
@@ -166,20 +151,21 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
     
     oldll <- ll
       
-    # update cluster memberships (eStep)
+    # update cluster responsibilities (eStep)
     # print out is logged to avoid underflow
     class.probs <- updateClassProb(x, N, k, mixture.comp, mixture.weights)
 
     # mStep
-    # update mixture proportions
-    mixture.weights <- updateWeights(class.probs)
-    # update binomial probabilites
-    mixture.comp <- updateComponents(x, N, class.probs)
+    theta <- mStep(x, N, class.probs)
+    mixture.comp <- theta$mixture.comp
+    mixture.weights <- theta$mixture.weights
+
     # recompute expected log-likelihood with current guesses
     ll <- mixLL(x, N, k, class.probs, mixture.comp, mixture.weights)
 
     if (verbose) {
-        print(paste("Current estimates are", c(mixture.weights, mixture.comp))) 
+        print(paste("Current estimates are ", 
+                    paste(c(mixture.weights, mixture.comp), collapse = ", "))) 
         print(paste("The log-like is:", ll)) 
     }
 
@@ -201,6 +187,7 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
   }
   convergence.iter <- (nstart - niter)
   convergence.alg <- (nstart > 0)
+   
   
   return(list(n = n,
               k = k,
