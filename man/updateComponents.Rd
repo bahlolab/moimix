@@ -4,7 +4,7 @@
 \alias{updateComponents}
 \title{update probs for binomials}
 \usage{
-updateComponents(x, N, class.probs)
+updateComponents(x, N, tau)
 }
 \description{
 update probs for binomials

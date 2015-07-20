@@ -2,13 +2,11 @@
 % Please edit documentation in R/binomial_mixture.R
 \name{mixLL}
 \alias{mixLL}
-\title{log-Likelihood function for mixture model
-Expected log-Likelihood function for mixture model}
+\title{Expected log-Likelihood function for mixture model}
 \usage{
 mixLL(x, N, k, class.probs, mixture.comp, mixture.weights)
 }
 \description{
-log-Likelihood function for mixture model
 Expected log-Likelihood function for mixture model
 }
 

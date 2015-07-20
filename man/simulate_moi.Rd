@@ -18,13 +18,15 @@ simulate_moi(n.samples, n.snps, moi, coverage, error, pi.true = NULL,
 
 \item{error}{probability of error in read counts}
 
+\item{pi.true}{optional matrix of true mixture proportions}
+
+\item{mu.true}{optional matrix of true mixture components}
+
+\item{aaf}{optional vector of underlying SNV proportions}
+
 \item{aaf.dist}{sampling distribution for SNV frequencies}
 
 \item{...}{other parameters to pass to aaf.dist}
-
-\item{clonal.props}{optional matrix of true mixture proportions}
-
-\item{geno.props}{optional matrix of true mixture components}
 }
 \value{
 A list containing the following elements
