@@ -13,8 +13,9 @@
 #' @param moi number of clonal infections
 #' @param coverage vector of total coverage per sample
 #' @param error probability of error in read counts
-#' @param clonal.props optional matrix of true mixture proportions
-#' @param geno.props optional matrix of true mixture components 
+#' @param pi.true optional matrix of true mixture proportions
+#' @param mu.true optional matrix of true mixture components
+#' @param aaf optional vector of underlying SNV proportions 
 #' @param aaf.dist  sampling distribution for SNV frequencies
 #' @param ... other parameters to pass to aaf.dist
 #' @return A list containing the following elements
@@ -70,7 +71,7 @@ simulate_moi <- function(n.samples, n.snps, moi, coverage, error,
             stop("mu.true must have dimensions moi by n.samples")
         }
         
-        if(any(mu.ture < 0) || any(mu.true > 1)) {
+        if(any(mu.true < 0) || any(mu.true > 1)) {
             stop("All entries of mu.true must be between 0 and 1.")
         }
     }
@@ -94,7 +95,7 @@ simulate_moi <- function(n.samples, n.snps, moi, coverage, error,
     }
     # generate mixture indexes for each SNV for each isolate
     # produce an n.samples by n.snps matrix with assignments
-    clusters <- foreach(i=1:n.samples, .combine = cbind) %do% {
+    clusters <- foreach(i=1:n.samples, .combine = cbind) %dopar% {
         sample(1:moi, n.snps, replace = TRUE, prob = pi.true[,i])
     } 
     # generate underlying SNV frequenciences
@@ -105,28 +106,26 @@ simulate_moi <- function(n.samples, n.snps, moi, coverage, error,
     # conditional probabilities of observing each SNV given underlying
     # clonal genotype
     # generate matrix of assignments
-    sample.p <- foreach(i =1:n.samples, .combine = cbind) %do% {
+    sample.p <- foreach(i =1:n.samples, .combine = cbind) %dopar% {
         mu.true[clusters[,i],i]
     }
     
     # generate whether SNV is observed using Bernoulli distribution
-    snv.observed <- foreach(i = 1:n.samples, .combine = cbind) %do% {
+    snv.observed <- foreach(i = 1:n.samples, .combine = cbind) %dopar% {
         rbinom(n.snps, size = 1, prob = aaf)
     }
     # multiply by the frequency of each alternate allele 
     sample.p <- snv.observed * sample.p
     # generate observed read counts in support of each SNV for each clone
-    read.counts <- foreach(i = 1:n.samples, .combine = cbind) %do% {
+    read.counts <- foreach(i = 1:n.samples, .combine = cbind) %dopar% {
         rbinom(n.snps, size = coverage[i], prob = sample.p[,i])
     }
     
-    error.counts <- matrix(0, 
-                           ncol = n.samples, 
-                           nrow = n.snps)
     
     if (error > 0) {
-        
-        error.counts <- foreach(i = 1:n.samples, .combine = cbind) %do% {
+        # generate Binomial realisations for probability
+        # of observing error reads in support of SNV 
+        error.counts <- foreach(i = 1:n.samples, .combine = cbind) %dopar% {
             rbinom(n.snps, size = coverage[i], prob = error)
         }
         
@@ -141,7 +140,6 @@ simulate_moi <- function(n.samples, n.snps, moi, coverage, error,
                 mu.true = mu.true,
                 moi = clusters,
                 aaf = aaf,
-                read.counts = read.counts,
-                error.counts = error.counts))
+                read.counts = read.counts))
     
 }
