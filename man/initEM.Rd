@@ -3,12 +3,12 @@
 \name{initEM}
 \alias{initEM}
 \title{Initialise mixture model parameters for EM
-uses kmeans on proportions}
+uses random start by default}
 \usage{
-initEM(x, N, k)
+initEM(x, N, k, method = "random_seed")
 }
 \description{
 Initialise mixture model parameters for EM
-uses kmeans on proportions
+uses random start by default
 }
 

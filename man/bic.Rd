@@ -4,7 +4,7 @@
 \alias{bic}
 \title{Bayesian Information Criterion for binomial mixture model}
 \usage{
-bic(x, N, mixture)
+bic(mixture)
 }
 \arguments{
 \item{mixture}{estimated mixture model}

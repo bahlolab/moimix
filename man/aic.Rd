@@ -4,7 +4,7 @@
 \alias{aic}
 \title{Akaike Infomation Criterion for binomial mixture model}
 \usage{
-aic(x, N, mixture)
+aic(mixture)
 }
 \arguments{
 \item{mixture}{estimated mixture model}
