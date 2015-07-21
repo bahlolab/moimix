@@ -37,7 +37,7 @@ mse <- function(mixture, theta) {
   stopifnot(length(theta) == 2*mixture$k)
   stopifnot(sum(theta[1:mixture$k]) == 1)
 
-  k.index <- 1:mixture$k
+  k <- mixture$k
   pi.hat <- mixture$pi
   mu.hat <- mixture$mu
   pi <- theta[1:k]

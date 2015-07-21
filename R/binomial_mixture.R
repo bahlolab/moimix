@@ -225,12 +225,13 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
   }
   convergence.iter <- (nstart - niter)
   convergence.alg <- (niter != 0)
-   
+  pi <- sort(mixture.weights)
+  mu <- mixture.comp[order(mixture.weights)]
   
   return(list(n = n,
               k = k,
-              pi = mixture.weights,
-              mu = mixture.comp,
+              pi = pi,
+              mu = mu,
               log.lik = ll,
               converge.iter = convergence.iter,
               converge.true = convergence.alg))
