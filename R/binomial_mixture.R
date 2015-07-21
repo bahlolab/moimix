@@ -62,15 +62,53 @@ mixLL <- function(x, N, k, class.probs, mixture.comp, mixture.weights) {
     
 }
 
-#' Initialise mixture model parameters for EM
-#' uses kmeans on proportions
-initEM <- function(x, N, k) {
+#' Seeding methods for mixture model
+#' kmeans initilisation
+kmeans_seed <- function(x, N, k) {
     p <- as.matrix(x/N)    
     kfit <- kmeans(p, k, nstart = 20)
     mixture.comp <- as.numeric(kfit$centers)
     mixture.weights <- tabulate(kfit$cluster)/length(x)
     list(mixture.comp = mixture.comp,
          mixture.weights = mixture.weights)
+}
+
+#' random start seeding
+#' choose array of starting points choose iteration that
+#' gives best estimate
+random_seed <- function(x, N, k, nstart = 20) {
+    # set up ll matrix
+    ll.max <- rep(NA, nstart)
+    pi.guess <- t(MCMCpack::rdirichlet(nstart, rep(1, k)))
+    mu.guess <- replicate(nstart, runif(k))
+    # compute 1 iteration for each starting setting
+    for(i in 1:nstart) {
+        estep <- updateClassProb(x, N, k, 
+                                 mixture.comp = mu.guess[,i],
+                                 mixture.weights = pi.guess[,i])
+        ll.max[i] <- mixLL(x, N, k, estep, mu.guess[,i], pi.guess[,i])
+    }
+    
+    # best start
+    max.index <- which.max(ll.max)
+    # sort for identifiability
+    pi.best <- sort(pi.guess[, max.index])
+    mu.best <- mu.guess[order(pi.guess[, max.index]), max.index] 
+    list(mixture.comp = mu.best,
+         mixture.weights = pi.best)
+    
+}
+
+# grid search start
+grid_seed <- function(x, N, k) {
+    
+}
+
+#' Initialise mixture model parameters for EM
+#' uses random start by default
+initEM <- function(x, N, k, method = "random_seed") {
+    seed.fun <- match.fun(method)
+    seed.fun(x, N, k)
 }
 #' EM algorithm for k-component binomial mixture model
 #' @param x observed vector of counts (read counts supporting SNV)
@@ -186,7 +224,7 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
 
   }
   convergence.iter <- (nstart - niter)
-  convergence.alg <- (nstart > 0)
+  convergence.alg <- (niter != 0)
    
   
   return(list(n = n,
