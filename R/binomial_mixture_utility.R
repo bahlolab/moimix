@@ -9,10 +9,10 @@
 #' @param mixture estimated mixture model
 #' @return The BIC of a model
 #' @export
-bic <- function(x, N, mixture) {
+bic <- function(mixture) {
   # we multiply k by 2 since we estimate
   # 2k paramters in the binommix
-  2*mixture$k*log(mixture$n) -2 * mixLL(x, N, mixture$k, mixture$pi, mixture$mu)
+  2*mixture$k*log(mixture$n) -2 * mixture$log.lik
 
 }
 
@@ -21,31 +21,31 @@ bic <- function(x, N, mixture) {
 #' @inheritParams bic
 #' @return The AIC of a model
 #' @export
-aic <- function(x, N, mixture) {
-  2 * (2*mixture$k - mixLL(x, N, mixture$k, mixture$pi, mixture$mu))
+aic <- function(mixture) {
+  2 * (2*mixture$k - mixture$log.lik)
 }
 
 #' Mean Square Error for binomial mixture model
 #'
+#' @description Compute sum of squares for mixture components
 #' @param mixture estimated mixture model
-#' @param theta     true mixture-model parameters of form (pi_1,..,pi_k, mu_1,...mu_k)
+#' @param theta   true mixture-model parameters of form (pi_1,..,pi_k, mu_1,...mu_k)
 #' @export
-mseMM <- function(mixture, theta) {
+mse <- function(mixture, theta) {
   # potential matching problem
   # which we avoid by sorting the components
   stopifnot(length(theta) == 2*mixture$k)
   stopifnot(sum(theta[1:mixture$k]) == 1)
 
   k.index <- 1:mixture$k
-  pi.hat <- sort(mixture$pi)
-  mu.hat <- sort(mixture$mu)
-  pi <- sort(theta[1:k])
-  mu <- sort(theta[(k+1):(2*k)])
-  print(c(pi, pi.hat))
-  print(c(mu, mu.hat))
-  mse <- list(pi.mse = mean((pi - pi.hat)^2),
-              mu.mse = mean((mu - mu.hat)^2),
-              all.mse = mean((c(pi,mu) - c(pi.hat,mu.hat))^2))
+  pi.hat <- mixture$pi
+  mu.hat <- mixture$mu
+  pi <- theta[1:k]
+  mu <- theta[(k+1):(2*k)]
+  # evaluate the error in each component
+  mse <- list(pi.mse = sum((pi - pi.hat)^2),
+              mu.mse = sum((mu - mu.hat)^2),
+              all.mse = sum((c(pi,mu) - c(pi.hat,mu.hat))^2))
   return(mse)
 }
 
@@ -65,20 +65,16 @@ autoSelect <- function(x, N, k, method, ...) {
   if(!(method %in% c("aic", "bic"))) {
     stop("Method must either be aic or bic")
   }
-  if(method == "aic") {
-    selector <- haldane::aic
-  }
-  if(method == "bic") {
-    selector <- haldane::bic
-  }
+
+  selector <- match.fun(method)
 
   # initalise
   crits <- c()
   models <- list()
   for (i in 1:k) {
     model <- binommixEM(x, N, i, ...)
-    ic <- selector(x, N, model)
-    models[[i]] <- list(mu = sort(model$mu), pi=sort(model$pi))
+    ic <- selector(model)
+    models[[i]] <- model
     crits[i] <- ic
   }
 
@@ -89,8 +85,7 @@ autoSelect <- function(x, N, k, method, ...) {
 
   return(list(info.crit = results,
               k = min.ic,
-              mu = best.model$mu,
-              pi = best.model$pi))
+              chosen.model = best.model))
 }
 
 #' CDF for binomial mixture model
@@ -125,7 +120,7 @@ binommixCDF <- function(mixture, x, N) {
 #' @export
 infoMat <- function(x, N, k, mu, pi) {
 
-  class.probs <- updateClassProb(x, N, k, mu, pi)
+  class.probs <- exp(updateClassProb(x, N, k, mu, pi))
   mat <- matrix(0, ncol = 2*k, nrow = 2*k)
   # -- second-derivative evaluated at mixture weights
   dq2dpi2 <- function(class.probs, x, N, pi, i) {
