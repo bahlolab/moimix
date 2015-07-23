@@ -3,6 +3,10 @@
 # for binomial mixture model.
 # Author: Stuart Lee
 # Date: 11/05/2015
+#' Collapse allele frequency to half axis
+#' @param p vector of proprotions
+#' @export
+collapseProbs <- function(p) { ifelse(p > 0.5, 1-p, p)}
 
 #' Bayesian Information Criterion for binomial mixture model
 #'
@@ -35,17 +39,18 @@ mse <- function(mixture, theta) {
   # potential matching problem
   # which we avoid by sorting the components
   stopifnot(length(theta) == 2*mixture$k)
-  stopifnot(sum(theta[1:mixture$k]) == 1)
 
   k <- mixture$k
   pi.hat <- mixture$pi
   mu.hat <- mixture$mu
   pi <- theta[1:k]
+  # check pi's sum to 1
+  stopifnot(all.equal(sum(pi), 1))
+  
   mu <- theta[(k+1):(2*k)]
   # evaluate the error in each component
-  mse <- list(pi.mse = sum((pi - pi.hat)^2),
-              mu.mse = sum((mu - mu.hat)^2),
-              all.mse = sum((c(pi,mu) - c(pi.hat,mu.hat))^2))
+  mse <- list(pi.mse = sum((pi - pi.hat)^2)/k,
+              mu.mse = sum((mu - mu.hat)^2)/k)
   return(mse)
 }
 
@@ -113,32 +118,67 @@ binommixCDF <- function(mixture, x, N) {
 #'
 #' @param x vector of read counts
 #' @param N vector of coverage at site
-#' @param k number of components
-#' @param mu mixture components
-#' @param pi mixture weights
+#' @param mixture estimated mixture model
 #' @return A 2k by 2k Fisher information matrix
 #' @export
-infoMat <- function(x, N, k, mu, pi) {
-
-  class.probs <- exp(updateClassProb(x, N, k, mu, pi))
-  mat <- matrix(0, ncol = 2*k, nrow = 2*k)
-  # -- second-derivative evaluated at mixture weights
-  dq2dpi2 <- function(class.probs, x, N, pi, i) {
-    -sum(class.probs[,i]/(pi[i]^2)) - sum((1 - class.probs[,i]) / (1 - pi[i])^2)
-  }
-  # -- second-derivative evaluated at mixture components
-  dq2dmu2 <- function(class.probs, x, N, mu, i) {
-    -sum((class.probs[, i] * x )/ (mu[i])^2) -sum(class.probs[,i]*(N-x)/(mu[i])^2)
-  }
-  diag(mat)[1:k] <- sapply(1:k,
-                           function(i)
-                             dq2dpi2(class.probs, x, N, pi, i))
-
-  diag(mat)[(k+1):(2*k)] <- sapply(1:k,
-                                   function(i)
-                                     dq2dmu2(class.probs, x, N, mu, i))
-
-  return(-mat)
+infoMat <- function(x, N, mixture) {
+    
+    k <- mixture$k
+    mu <- mixture$mu
+    pi <- mixture$pi
+    
+    class.probs <- exp(updateClassProb(x, N, k, mu, pi))
+    mat <- matrix(0, ncol = 2*k, nrow = 2*k)
+    # -- second-derivative evaluated at mixture weights
+    dq2dpi2 <- function(class.probs, x, N, pi, i) {
+        -sum(class.probs[,i]/(pi[i]^2)) - sum((1 - class.probs[,i]) / (1 - pi[i])^2)
+    }
+    # -- second-derivative evaluated at mixture components
+    dq2dmu2 <- function(class.probs, x, N, mu, i) {
+        -sum((class.probs[, i] * x )/ (mu[i])^2) -sum(class.probs[,i]*(N-x)/(mu[i])^2)
+    }
+    diag(mat)[1:k] <- sapply(1:k,
+                             function(i)
+                                 dq2dpi2(class.probs, x, N, pi, i))
+    
+    diag(mat)[(k+1):(2*k)] <- sapply(1:k,
+                                     function(i)
+                                         dq2dmu2(class.probs, x, N, mu, i))
+    
+    return(-mat)
 }
 
+#' Compute standard errors for mixture model estimates
+#' 
+#' @description se is computed as the inverse of the Fisher information matrix
+#' at the EM estimates
+#' @param x vector of read counts
+#' @param N vector of coverage at site
+#' @export
+seMM <- function(x, N, mixture) {
+    info.mat.est <- infoMat(x, N, mixture)
+    # compute inverse
+    inv.info.mat.est <- solve(info.mat.est)
+    # return diagonals
+    sqrt(diag(inv.info.mat.est))
+}
 
+#' Generate iid mixture random variables 
+#' for testing EM implementation
+#' 
+#' @param n number of realisations
+#' @param N number of trials
+#' @param k number of components
+#' @param mu true mixture components
+#' @param pi true mixture weights
+#' @export
+sampleMM <- function(n, N, k, mu, pi) {
+    # assert that pi and mu must have length k
+    stopifnot(length(pi) == k)
+    stopifnot(length(mu) == k)
+    # generate true hidden states
+    states <- sample.int(k, size = n, replace = TRUE, prob = pi)
+    # sample from binomial according to states
+    observations <- rbinom(n, size = N, prob = mu[states])
+    list(obs = observations, states = states)
+}

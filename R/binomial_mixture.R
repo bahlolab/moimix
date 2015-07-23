@@ -3,37 +3,56 @@
 # Date: 07/04/2015
 # Description: Functions for clustering variant frequencies
 # using a two component mixture of binomial distributions
-
-#' Collapse allele frequency to half axis
-#' @param p vector of proprotions
-#' @export
-collapseProbs <- function(p) { ifelse(p > 0.5, 1-p, p)}
-
 #' Update class probabilities (i.e compute tau in Estep)
+#' @export
 updateClassProb <- function(x, N, k, mixture.comp, mixture.weights) {
     #classProb <- function(x, i) {
     #  mixture.weights[i] * dbinom(x, size = N, prob = mixture.comp[i])
     #}
+    # asster that mixture weights must sum to 1
+    stopifnot(all.equal(sum(mixture.weights), 1))
     # shift everything into log space to avoid underflow    
     probs <- sapply(1:k, FUN = function(j) 
-        mixture.weights[j] * dbinom(x, 
+        log(mixture.weights[j])  + dbinom(x, 
                                     size = N, 
-                                    prob = mixture.comp[j]))
-    denom <- log(rowSums(probs))
-    tau <- log(probs) - denom
-    tau  
+                                    prob = mixture.comp[j],
+                                    log = TRUE))
+    # probs are in log space
+    denom <- logSum(probs)
+    tau <- probs - denom
+    # assert that all row probs must sum to 1
+    stopifnot(all.equal(rowSums(exp(tau)), rep(1, nrow(tau))))
+    
+    list(log.probs = probs, tau = tau)
+}
+#' Take log of sum for logs
+#' @export
+logSum <- function(probs) {
+    # compute log(sum_i^k pi_k*b(ni, mu_k)) from
+    # log(pi_k*b(ni, mu_k)))
+    # find maxP for each row of the matrix
+    max.index <- apply(probs, 1, which.max)
+    
+    sapply(1:nrow(probs),
+           function(j) 
+               probs[j, max.index[j]] + 
+               log1p(sum(exp(probs[j, -max.index[j]] - probs[j, max.index[j]]))))
+
 }
 
 #' update class weights
+#' @export
 updateWeights <- function(tau) {
-    colMeans(tau)
+    colSums(tau) / sum(colSums(tau))
 }
 #' update probs for binomials
+#' @export
 updateComponents <- function(x, N, tau) {
     colSums(tau*x) / colSums(tau*N)
 }
 
 #' full mstep combine pi and mu
+#' @export
 mStep <- function(x, N, class.probs) {
     # take inverse (get out of log-space)
     tau <- exp(class.probs)
@@ -45,25 +64,42 @@ mStep <- function(x, N, class.probs) {
 }
 
 #' Expected log-Likelihood function for mixture model
+#' @expor
 mixLL <- function(x, N, k, class.probs, mixture.comp, mixture.weights) {
     # generate log(pi_k) + log(dbinom(x, N, mu_k))
-    # gives us a k by length(x) matrix
-    within.class.ll <- apply(sapply(mixture.comp, dbinom,
+    # assert that mixture weights sum to 1
+    stopifnot(all.equal(sum(mixture.weights), 1))
+    
+    pi.mat <- matrix(rep(log(mixture.weights), length(x)), 
+                     ncol = k, 
+                     byrow = TRUE)
+    # genereate within cluster log-likelihoods
+    within.class.ll <- sapply(mixture.comp, dbinom,
                                     x = x,
                                     size = N,
-                                    log = TRUE), 1, 
-                             function(i) i + log(mixture.weights))
-    # we also have a length(x) by k responsibilites matrix
-    # take dot product of rows with columns then sum to get
-    # expected log-likelihood
+                                    log = TRUE)
+    # now we have the log terms together in length(x) by k
+    # matrix
     tau <- exp(class.probs)
-    sum(sapply(1:length(x), 
-               function(i) sum(tau[i,] * within.class.ll[,i])))
+    
+    all.ll <- tau * (pi.mat + within.class.ll)
+    
+    sum(all.ll)
+    # we also have a length(x) by k responsibilites matrix
+    # multiply rows then take sums to get
+    # expected log-likelihood
+    
+    # sum(rowSums(tau * all.ll))
     
 }
 
+# mixLL <- function(log.probs, tau) {
+#     sum(log.probs * exp(tau))
+# }
+
 #' Seeding methods for mixture model
 #' kmeans initilisation
+#' @export
 kmeans_seed <- function(x, N, k) {
     p <- as.matrix(x/N)    
     kfit <- kmeans(p, k, nstart = 20)
@@ -76,17 +112,41 @@ kmeans_seed <- function(x, N, k) {
 #' random start seeding
 #' choose array of starting points choose iteration that
 #' gives best estimate
+#' @export
 random_seed <- function(x, N, k, nstart = 20) {
     # set up ll matrix
     ll.max <- rep(NA, nstart)
-    pi.guess <- t(MCMCpack::rdirichlet(nstart, rep(1, k)))
-    mu.guess <- replicate(nstart, runif(k))
+    # if k = 1 all pi's are 1, just guess mu as MLE
+    if (k == 1) {
+        
+        return(list(mixture.comp = sum(x) / (N * length(x)),
+                    mixture.weights = 1))
+    }
+    else {
+        # sample mixture weights from Dirichlet
+        pi.guess <-  t(MCMCpack::rdirichlet(nstart, rep(1, k)))
+        # randomly partition data according to mixture weights
+        # estimate mean within each group
+        kk.partition <- apply(pi.guess, 2,
+                              function(p) 
+                                  sample.int(k, 
+                                             size = length(x), 
+                                             replace = TRUE, 
+                                             prob = p))
+        
+        mu.guess <- apply(kk.partition, 2,
+                           function(sub) 
+                               sapply(1:k,
+                                      function(j)
+                                          mean(x[sub==j]) / N))
+    }
+    
     # compute 1 iteration for each starting setting
     for(i in 1:nstart) {
         estep <- updateClassProb(x, N, k, 
                                  mixture.comp = mu.guess[,i],
-                                 mixture.weights = pi.guess[,i])
-        ll.max[i] <- mixLL(x, N, k, estep, mu.guess[,i], pi.guess[,i])
+                                 mixture.weights = pi.guess[,i])        
+        ll.max[i] <- mixLL(x, N, k, estep$tau, mu.guess[,i], pi.guess[,i])
     }
     
     # best start
@@ -106,6 +166,7 @@ grid_seed <- function(x, N, k) {
 
 #' Initialise mixture model parameters for EM
 #' uses random start by default
+#' @export
 initEM <- function(x, N, k, method = "random_seed") {
     seed.fun <- match.fun(method)
     seed.fun(x, N, k)
@@ -147,6 +208,9 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
     stop(paste("Mixture model parameters must have length:", k))
   }
 
+  # assert mixture weiths sum to 1
+  stopifnot(!is.null(mixture.weights) && sum(mixture.weights) == 1)
+  
   # reads and coverage vectors not same length
   if (length(x) != length(N)) {
     if (length(N) == 1) {
@@ -172,6 +236,8 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
       init.params <- initEM(x, N, k)
       mixture.comp <- init.params$mixture.comp
       mixture.weights <- init.params$mixture.weights
+      # assert that mixture weights sum to 1
+      stopifnot(sum(mixture.weights) == 1)
   }
 
   # initialse log-likelihoods
@@ -188,25 +254,40 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
   while(TRUE) {
     
     oldll <- ll
-      
+    
+    current <- list(mixture.comp = mixture.comp,
+                    mixture.weights = mixture.weights)
     # update cluster responsibilities (eStep)
     # print out is logged to avoid underflow
-    class.probs <- updateClassProb(x, N, k, mixture.comp, mixture.weights)
+    estep <- updateClassProb(x, N, k, 
+                             current$mixture.comp, 
+                             current$mixture.weights)
 
-    # mStep
-    theta <- mStep(x, N, class.probs)
-    mixture.comp <- theta$mixture.comp
+ 
+    # mStep - new guesses
+    theta <- mStep(x, N, estep$tau)
     mixture.weights <- theta$mixture.weights
+    mixture.comp <- theta$mixture.comp
+    
+    
 
-    # recompute expected log-likelihood with current guesses
-    ll <- mixLL(x, N, k, class.probs, mixture.comp, mixture.weights)
-
+    # recompute expected log-likelihood with new guesses
+    ll <- mixLL(x, N, k, estep$tau, mixture.comp, mixture.weights)    
+    
+    
     if (verbose) {
         print(paste("Current estimates are ", 
                     paste(c(mixture.weights, mixture.comp), collapse = ", "))) 
         print(paste("The log-like is:", ll)) 
     }
 
+    # assert thtat log-likelihood increasing
+    if((ll < oldll) && (niter < nstart)) {
+        print(c(ll, oldll))
+        stop("Log-likelihood is decreasing, but should increase at
+             every iteration")
+    }
+    
     if ((abs(ll - oldll) <= epsilon) && niter) {
       if(verbose){
         message(paste("EM algorithm converged after ",
@@ -225,8 +306,8 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
   }
   convergence.iter <- (nstart - niter)
   convergence.alg <- (niter != 0)
-  pi <- sort(mixture.weights)
-  mu <- mixture.comp[order(mixture.weights)]
+  pi <- mixture.weights
+  mu <- mixture.comp
   
   return(list(n = n,
               k = k,
