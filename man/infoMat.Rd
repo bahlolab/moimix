@@ -4,18 +4,14 @@
 \alias{infoMat}
 \title{Fisher Information Approximation}
 \usage{
-infoMat(x, N, k, mu, pi)
+infoMat(x, N, mixture)
 }
 \arguments{
 \item{x}{vector of read counts}
 
 \item{N}{vector of coverage at site}
 
-\item{k}{number of components}
-
-\item{mu}{mixture components}
-
-\item{pi}{mixture weights}
+\item{mixture}{estimated mixture model}
 }
 \value{
 A 2k by 2k Fisher information matrix
