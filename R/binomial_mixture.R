@@ -64,7 +64,7 @@ mStep <- function(x, N, class.probs) {
 }
 
 #' Expected log-Likelihood function for mixture model
-#' @expor
+#' @export
 mixLL <- function(x, N, k, class.probs, mixture.comp, mixture.weights) {
     # generate log(pi_k) + log(dbinom(x, N, mu_k))
     # assert that mixture weights sum to 1

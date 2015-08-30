@@ -8,6 +8,18 @@
 #' @export
 collapseProbs <- function(p) { ifelse(p > 0.5, 1-p, p)}
 
+#' Filter read-count matrix
+#' @param x vector of b-allele depths
+#' @export
+filterCounts <- function(x) {
+  x[x > 0]
+}
+
+#' Convert odds to probability
+toProb <- function(o) {
+  exp(o) / (1+exp(o))
+}
+
 #' Bayesian Information Criterion for binomial mixture model
 #'
 #' @param mixture estimated mixture model
@@ -34,22 +46,23 @@ aic <- function(mixture) {
 #' @description Compute sum of squares for mixture components
 #' @param mixture estimated mixture model
 #' @param theta   true mixture-model parameters of form (pi_1,..,pi_k, mu_1,...mu_k)
+#' @importMethodsFrom flexmix parameters prior
 #' @export
 mse <- function(mixture, theta) {
   # potential matching problem
   # which we avoid by sorting the components
-  stopifnot(length(theta) == 2*mixture$k)
+  stopifnot(length(theta) == 2*mixture@k)
 
-  k <- mixture$k
-  pi.hat <- mixture$pi
-  mu.hat <- mixture$mu
+  k <- mixture@k
+  mu.hat <- toProb(parameters(mixture))
+  pi.hat <- prior(mixture)
   pi <- theta[1:k]
   # check pi's sum to 1
   stopifnot(all.equal(sum(pi), 1))
   
   mu <- theta[(k+1):(2*k)]
   # evaluate the error in each component
-  mse <- list(pi.mse = sum((pi - pi.hat)^2)/k,
+  mse <- data.frame(pi.mse = sum((pi - pi.hat)^2)/k,
               mu.mse = sum((mu - mu.hat)^2)/k)
   return(mse)
 }
