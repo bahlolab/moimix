@@ -318,3 +318,13 @@ binommixEM <- function(x, N, k, mixture.comp = NULL, mixture.weights = NULL,
               converge.true = convergence.alg))
 
 }
+
+binommix <- function(x, N, k, niter = 1000) {
+  require(flexmix)
+  y <- cbind(x, N-x)
+  initFlexmix(y ~ 1, 
+              k = k, 
+              model = FLXMRglm(y ~ ., family = "binomial"),
+              control = list(iter.max = niter,
+                             minprior = 0))
+}
