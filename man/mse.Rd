@@ -4,12 +4,12 @@
 \alias{mse}
 \title{Mean Square Error for binomial mixture model}
 \usage{
-mse(mixture, theta)
+mse(model, theta)
 }
 \arguments{
-\item{mixture}{estimated mixture model}
-
 \item{theta}{true mixture-model parameters of form (pi_1,..,pi_k, mu_1,...mu_k)}
+
+\item{mixture}{estimated mixture model}
 }
 \description{
 Compute sum of squares for mixture components

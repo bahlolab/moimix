@@ -4,10 +4,10 @@
 \alias{binommixCDF}
 \title{CDF for binomial mixture model}
 \usage{
-binommixCDF(mixture, x, N)
+binommixCDF(model, x, N)
 }
 \arguments{
-\item{mixture}{}
+\item{model}{flexmix object}
 
 \item{x}{vector of read counts supporting each SNV}
 

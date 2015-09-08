@@ -2,14 +2,14 @@
 % Please edit documentation in R/binomial_mixture_utility.R
 \name{seMM}
 \alias{seMM}
-\title{Compute standard errors for mixture model estimates}
+\title{Compute standard errors for mixture model parameter estimates}
 \usage{
-seMM(x, N, mixture)
+seMM(y, model)
 }
 \arguments{
-\item{x}{vector of read counts}
+\item{y}{a two column matrix of read counts}
 
-\item{N}{vector of coverage at site}
+\item{model}{flexmix object}
 }
 \description{
 se is computed as the inverse of the Fisher information matrix
