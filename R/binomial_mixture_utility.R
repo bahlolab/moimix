@@ -11,9 +11,13 @@ collapseProbs <- function(p) { ifelse(p > 0.5, 1-p, p)}
 #' Filter read-count matrix
 #' @param x vector of b-allele depths
 #' @param N vector of site depths
+#' @param p vector containing boundary cut-offs for inclusion
 #' @return matrix with two columns
 #' @export
 filterCounts <- function(x, N) {
+    #if (length(p) != 2) stop("Boundaries proportion must be between 0 and 1")
+    #if (sum(p) != 1) stop("p must sum to 1")
+    # if (diff(p) == 0) stop("no data left!")
     diff <- N - x
     index = which(x  > 0)
     cbind(x[index], diff[index])
@@ -37,6 +41,7 @@ mse <- function(model, theta) {
 
   k <- model@k
   estimates <- getTheta(model)
+  estimates <- estimates[order(-estimates$pi.hat),]
   pi <- theta[1:k]
   # check pi's sum to 1
   stopifnot(all.equal(sum(pi), 1))
@@ -45,6 +50,8 @@ mse <- function(model, theta) {
   true <- data.frame(pi = pi, mu = mu)
   # order by pi component
   true <- true[order(-true$pi),]
+  print(estimates)
+  print(true)
   # evaluate the error in each component
   mse <- data.frame(pi.mse = sum((true$pi - estimates$pi.hat)^2)/k,
               mu.mse = sum((true$mu - estimates$mu.hat)^2)/k)
@@ -116,11 +123,38 @@ infomat <- function(y, model) {
 #' @param model flexmix object
 #' @export
 seMM <- function(y, model) {
+    k <- model@k
     info.mat.est <- infomat(y, model)
     # compute inverse
     inv.info.mat.est <- solve(info.mat.est)
     # return diagonals
-    sqrt(diag(inv.info.mat.est))
+    se <- sqrt(diag(inv.info.mat.est))
+    se.pi <- se[1:k]
+    se.mu <- se[(k+1):(2*k)]
+    data.frame(se.pi = se.pi, 
+               se.mu = se.mu)
+}
+
+#' Generate Confidence Intervals for
+#' parameter estimates using estimated Fisher Information
+#' Matrix
+#' 
+#' @param y filtered counts matrix
+#' @param model flexmix object
+#' @param alpha confidence level (default = 0.05)
+#' @return a data.frame containing parameter estimates
+#' and lower and upper confidence limits
+ciMM <- function(y, model, alpha = 0.05) {
+    z <- c(qnorm(alpha/2), qnorm(1-alpha/2))
+    bounds.est <- seMM(y, model)
+    param.est <- getTheta(model)
+    ci.est <- data.frame(pi.hat = param.est$pi.hat,
+                         pi.lower = z[1] * bounds.est$se.pi,
+                         pi.upper = z[2] * bounds.est$se.pi,
+                         mu.hat = param.est$mu.hat,
+                         mu.lower = z[1] * bounds.est$se.mu,
+                         mu.upper = z[2] * bounds.est$se.mu)
+    ci.est
 }
 
 #' Generate iid mixture random variables 
