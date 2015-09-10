@@ -14,12 +14,13 @@ collapseProbs <- function(p) { ifelse(p > 0.5, 1-p, p)}
 #' @param p vector containing boundary cut-offs for inclusion
 #' @return matrix with two columns
 #' @export
-filterCounts <- function(x, N) {
-    #if (length(p) != 2) stop("Boundaries proportion must be between 0 and 1")
-    #if (sum(p) != 1) stop("p must sum to 1")
-    # if (diff(p) == 0) stop("no data left!")
+filterCounts <- function(x, N, p = c(0.01, 0.99)) {
+    if (length(p) != 2) stop("Boundaries proportion must be between 0 and 1")
+    if (sum(p) != 1) stop("p must sum to 1")
+    if (diff(p) == 0) stop("no data left!")
+    baf <- x/N
     diff <- N - x
-    index = which(x  > 0)
+    index = which(baf  >= p[1] & baf <= p[2])
     cbind(x[index], diff[index])
 }
 
@@ -41,15 +42,15 @@ mse <- function(model, theta) {
 
   k <- model@k
   estimates <- getTheta(model)
-  estimates <- estimates[order(-estimates$pi.hat),]
+  estimates <- estimates[order(-estimates$mu.hat),]
   pi <- theta[1:k]
   # check pi's sum to 1
   stopifnot(all.equal(sum(pi), 1))
   
   mu <- theta[(k+1):(2*k)]
   true <- data.frame(pi = pi, mu = mu)
-  # order by pi component
-  true <- true[order(-true$pi),]
+  # order by mu component
+  true <- true[order(-true$mu),]
   print(estimates)
   print(true)
   # evaluate the error in each component
@@ -58,6 +59,24 @@ mse <- function(model, theta) {
   return(mse)
 }
 
+perplexity <- function(model, x, N) {
+    2 ^ (-mean(log2(binommixPDF(model, x, N))))
+}
+
+binommixPDF <- function(model, x, N) {
+    estimates <- getTheta(model)
+    pi <- estimates$pi.hat
+    mu <- estimates$mu.hat
+    k <- model@k
+    dbinomForMix <- function(x, N, component) {
+        pi[component] * pbinom(x, 
+                               size = N,
+                               prob = mu[component])
+    }
+    
+    dbinoms <- sapply(1:k, dbinomForMix, x = x, N = N)
+    return(rowSums(dbinoms))
+}
 #' CDF for binomial mixture model
 #'
 #'@param model flexmix object

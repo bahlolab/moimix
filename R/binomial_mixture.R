@@ -11,7 +11,7 @@
 #' @param N vector of depth at SNV sites
 #' @param k vector of mixture components to fit
 #' @param niter number of iterations to run 
-binommix <- function(y, k, niter = 1000) {
+binommix <- function(y, k, niter = 1000, nrep = 10) {
     # I/O error handling
     if(!is(y, "matrix")) stop("y must be a matrix of counts")
     if(dim(y)[2] != 2) stop("y must have two columns")
@@ -21,7 +21,8 @@ binommix <- function(y, k, niter = 1000) {
                          k = k, 
                          model = flexmix::FLXMRglm(y ~ ., family = "binomial"),
                          control = list(iter.max = niter,
-                                        minprior = 0))
+                                        minprior = 0),
+                         nrep = 10)
 }
 
 #' Return estimated model parameters
@@ -60,3 +61,4 @@ getTheta <- function(model, k = NULL, criterion = NULL) {
         stop("model must be flexmix or stepFlexmix class")
     }
 }
+

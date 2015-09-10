@@ -91,12 +91,14 @@ simulate_moi <- function(n.samples, n.snps, moi, coverage, error,
     
     if (is.null(mu.true)) {
         # produces an moi by n.samples
-        mu.true <- replicate(n.samples, runif(moi))
+        mu.true <- t(MCMCpack::rdirichlet(n.samples,
+                                          alpha = rep(1, moi)))
     }
     # generate mixture indexes for each SNV for each isolate
     # produce an n.samples by n.snps matrix with assignments
-    clusters <- foreach(i=1:n.samples, .combine = cbind) %dopar% {
-        sample(1:moi, n.snps, replace = TRUE, prob = pi.true[,i])
+    clusters <- foreach(i=1:n.samples) %dopar% {
+        
+        (n.snps, size = 1, prob = xx$pi.true[,i])
     } 
     # generate underlying SNV frequenciences
     if (is.null(aaf)) {
@@ -106,20 +108,24 @@ simulate_moi <- function(n.samples, n.snps, moi, coverage, error,
     # conditional probabilities of observing each SNV given underlying
     # clonal genotype
     # generate matrix of assignments
-    sample.p <- foreach(i =1:n.samples, .combine = cbind) %dopar% {
-        mu.true[clusters[,i],i]
+    sample.reads <- foreach(i =1:n.samples) %dopar% {
+        rmultinom(n.snps, 
+                  size = coverage[i], 
+                  prob = mu.true[,i])
+    }
+
+    # generate whether SNV is observed using Bernoulli distribution
+    # conditional on cluster membership
+    snv.observed <- foreach(i = 1:n.samples) %dopar% {
+        sapply(aaf, rbinom, n=moi, size = 1)
     }
     
-    # generate whether SNV is observed using Bernoulli distribution
-    snv.observed <- foreach(i = 1:n.samples, .combine = cbind) %dopar% {
-        rbinom(n.snps, size = 1, prob = aaf)
-    }
-    # multiply by the frequency of each alternate allele 
-    sample.p <- snv.observed * sample.p
     # generate observed read counts in support of each SNV for each clone
     read.counts <- foreach(i = 1:n.samples, .combine = cbind) %dopar% {
-        rbinom(n.snps, size = coverage[i], prob = sample.p[,i])
+        colSums(clusters[[i]]*sample.reads[[i]]*snv.observed[[i]])
     }
+    
+    
     
     
     if (error > 0) {
@@ -140,6 +146,7 @@ simulate_moi <- function(n.samples, n.snps, moi, coverage, error,
                 mu.true = mu.true,
                 moi = clusters,
                 aaf = aaf,
-                read.counts = read.counts))
+                read.counts = read.counts,
+                snv.observed = snv.observed))
     
 }
