@@ -85,14 +85,14 @@ simulate_moi <- function(n.samples, n.snps, moi, coverage, error,
     # step 1, generate underlying parameters
     if (is.null(pi.true)) {
         pi.true <- t(MCMCpack::rdirichlet(n.samples, 
-                                          alpha = rep(1, moi)))
+                                          alpha = 2^(1: moi)))
         
     }
     
     if (is.null(mu.true)) {
         # produces an moi by n.samples
         mu.true <- t(MCMCpack::rdirichlet(n.samples,
-                                          alpha = rep(1, moi)))
+                                          alpha = 2^(1:moi)))
     }
     # generate mixture indexes for each SNV for each isolate
     # produce an n.samples by n.snps matrix with assignments

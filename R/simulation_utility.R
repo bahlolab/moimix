@@ -65,7 +65,7 @@ study4 <- function(n.snps = c(1000, 10000, 25000, 50000, 100000), ...) {
                         0.99, 0.005, 0.005,
                         0.4, 0.15, 0.45), nrow = 3)
     
-    mu.true <- t(MCMCpack::rdirichlet(20, alpha = rep(1, 3)))
+    mu.true <- t(MCMCpack::rdirichlet(20, alpha = c(2,4,6)))
     
     out <- list()
     coverage = rep(50, 20)
