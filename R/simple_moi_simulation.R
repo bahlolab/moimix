@@ -98,7 +98,7 @@ simulate_moi <- function(n.samples, n.snps, moi, coverage, error,
     # produce an n.samples by n.snps matrix with assignments
     clusters <- foreach(i=1:n.samples) %dopar% {
         
-        (n.snps, size = 1, prob = xx$pi.true[,i])
+        rmultinom(n.snps, size = 1, prob = pi.true[,i])
     } 
     # generate underlying SNV frequenciences
     if (is.null(aaf)) {
