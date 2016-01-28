@@ -2,16 +2,20 @@ Package: moimix
 Title: moimix: estimating mulitplicity of infection in malaria parasites
 Version: 0.0.0.0
 Authors@R: "Stuart Lee <lee.s@wehi.edu.au> [aut, cre]"
-Description: R package to evaluate multiplicity of infection (MOI) of malaria 
+Description: R package to evaluate multiplicity of infection (MOI) of malaria
     parasites using mixture models. moimix can be used to simulate massively
     single nucleotide variant (SNV) data from isolates with MOI. It provides
-    methods to estimate MOI using an EM algorithm. 
-Depends: 
-    R (>= 3.1.1)
+    methods to estimate MOI using an EM algorithm.
+Depends:
+    foreach,
+    flexmix
 License: MIT + file LICENSE
 LazyData: true
-Depends: foreach, flexmix
-Imports: MCMCpack, foreach
-Suggests: testthat,
+Imports:
+    MCMCpack,
+    foreach
+Suggests:
+    testthat,
     knitr
 VignetteBuilder: knitr
+RoxygenNote: 5.0.1
