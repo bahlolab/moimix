@@ -134,6 +134,8 @@ callMajor <- function(gdsfile, get.nucleotides = FALSE) {
 #'
 #' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
 #' @importFrom  SeqArray seqSummary seqApply
+#' @return a numeric matrix of size l by n where l is the number of samples
+#' and n is the number of SNPs. 
 #' @export
 getBAF <- function(gdsfile) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
@@ -149,14 +151,67 @@ getBAF <- function(gdsfile) {
              margin = "by.variant",
              as.is = "list")
     # convert list to matrix
-    baf <- matrix(unlist(nrf), ncol = length(nrf))
+    baf <- matrix(unlist(nrf), ncol = length(nrf),
+                  dimnames = list(sample = seqGetData(gdsfile, "sample.id"),
+                                  variant = seqGetData(gdsfile, "variant.id")))
     
     baf
 }
 
+#' Plot B-allele frequencies by sample
+#' 
+#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
+#' @param loic NULL optional list containing chromosome name, start postion, end position, and name
+#' @param outdir path to save figures
+#' @importFrom scales alpha
+#' @export
+plotBAF <- function(gdsfile, loci = NULL, outdir) {
+    stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
+    stopifnot(dir.exists(outdir))
+    if(is.null(loci)) {
+        baf <- getBAF(gdsfile)
+        # prepare plotting device
+        sample.id <- rownames(baf)
+        breaks <- tapply(1:ncol(baf), 
+                         seqGetData(gdsfile, "chromosome"), median)
+        for(sample in sample.id) {
+            png(paste0(outdir, "/", sample, "_BAF_all", ".png"))
+            plot(baf[sample, ], xaxt ="n", xlab = "", 
+                 ylim = c(0,1), ylab = "SNV frequency", 
+                 col = scales::alpha("black", 0.5), pch = 16)
+            axis(side = 1, at = breaks, labels = names(breaks), 
+                 las = 3, cex.axis = 0.6)
+            dev.off()
+            
+        }
+    }
+    else {
+        old.filter <- seqGetFilter(gdsfile)
+        seqSetFilterChrom(gdsfile, include = loci$chromosome, is.num = FALSE,
+                          from.bp = loci$start, to.bp = loci$end)
+        baf <- getBAF(gdsfile)
+        sample.id <- rownames(baf)
+        
+        for(sample in sample.id) {
+            png(paste0(outdir, "/", sample, "_BAF_", loci$name, ".png"))
+            plot(baf[sample, ], xaxt = "n", xlab = "", ylim = c(0,1), 
+                 ylab = "SNV frequency", pch = 16)
+            dev.off()
+        }
+        
+        seqSetFilter(gdsfile, variant.sel = old.filter$variant.sel)
+        
+    }
+    
+}
+
+
+
 #' Compute minor allele frequency 
 #' 
-#' 
+#' @details Coverage based estimation of minor allele frequences.
+#' The MAF  is computed by computing the minimum of the proportion of 
+#' reads covering the reference and alternate allele over all samples.   
 #' @note Currently only supports gds files obtained from GATK callers
 #' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
 #' @importFrom SeqArray seqApply seqSummary
@@ -184,7 +239,13 @@ getMAF <- function(gdsfile) {
 
 #' Compute heterozygosity by sample 
 #' 
-#' 
+#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object 
+#' @details Follows the method outlined in Manske et al. 2012. Briefly,
+#' for each sample, the reference and and alternate allele frequencies are computed
+#' as the proportion of reads covering each allele. Then heterozygosity at a SNP
+#' is 1 - (raf^2 + aaf^2) 
+#' @return a numeric matrix of size l by n where l is the number of samples
+#' and n is the number of SNPs.
 getHeterozygosityBySample <- function(gdsfile) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     # estimate NRAF matrix, currently on GATK vcf file support
@@ -202,7 +263,6 @@ getHeterozygosityBySample <- function(gdsfile) {
         1 - (p^2 + q^2)
         
     }
-    
     het <- seqApply(gdsfile, "annotation/format/AD", heterozygosity, 
              margin = "by.variant", as.is = "list")
     
@@ -212,6 +272,9 @@ getHeterozygosityBySample <- function(gdsfile) {
 }
 
 #' Compute population level heterozygosity
+#' 
+#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object 
+#' @note Need to update so population ids can be submitted.
 getHeterozygosity <- function(gdsfile) {
     # first compute MAF 
     maf <- getMAF(gdsfile)
@@ -219,17 +282,30 @@ getHeterozygosity <- function(gdsfile) {
     
 }
 
-#' Compute Fws statistic
+#' Compute \eqn{Fws} within-host diversity statistic
 #' 
-#' @details 
-#' @references 
+#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object 
+#' @details Compute the within host diversity statistic according to the
+#' method devised in  Manske et.al, 2012. Briefly, within sample heterozygosity
+#' and within population heterozygosity are computed and assigned to ten equal sized
+#' MAF bins [0.0.05]...[0.45,0.5]. For each bin the mean within sample and population
+#' heterozygosity is computed. A regression line of these values through the orgin
+#' is computed for each sample. The \eqn{Fws} is then \eqn{1 - \beta}.
+#'
+#' @references Manske, Magnus, et al. "Analysis of Plasmodium falciparum 
+#' diversity in natural infections by deep sequencing." Nature 487.7407 (2012): 
+#' 375-379.
+#' @note Currently only works on GATK derived gdsfiles. Needs to be updated
+#' to define populations.
+#' @seealso \code{\link{getHeterozygosity}}, \code{\link{getHeterozygosityBySample}}
+#' @export
 getFws <- function(gdsfile) {
     # compute heterozygosity at sample level
     sample.het <- getHeterozygosityBySample(gdsfile)
     # compute heterozygosity at population level
     population.het <- getHeterozygosity(gdsfile)
     # create MAF bins, 0..0.05, 0.05..0.1,...,0.45..0.5 
-    maf.bins <- findInterval(getMAF(gdsfile), seq(0, 0.5, length.out = 11))
+    maf.bins <- findInterval(getMAF(gdsfile), seq(0, 0.5, length.out = 21))
     # find mean population heterozygoisty values
     mu.population.het <- tapply(population.het, bins, mean)
     
@@ -237,7 +313,7 @@ getFws <- function(gdsfile) {
     mu.sample.het <- apply(sample.het, 1, 
                            function(x) tapply(x, bins, mean, na.rm = TRUE))
     
-    fws <- apply(mu.sample.het, 2, function(x) 1 -lm(x ~ mu.population.het -1)$coeff)
+    fws <- apply(mu.sample.het, 2, function(x) 1-lm(x ~ mu.population.het -1)$coeff)
                              
     fws
 }
