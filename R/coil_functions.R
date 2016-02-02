@@ -20,7 +20,7 @@
 #' polymorphism data." Malaria journal 14.1 (2015): 4. 
 #' @note Need to look at how COIL constructed it's orginal barcode. Esp. het calls.
 #' @return data.frame containing barcode for each sample
-#' @importFrom SeqArray seqSetFilter seqGetData
+#' @importFrom SeqArray seqSetFilter seqGetData seqGetFilter
 #' @export
 extractBarcode <- function(gdsfile, variant.id, barcode.file) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
@@ -60,7 +60,7 @@ getCoordinates <- function(gdsfile) {
                stringsAsFactors = FALSE)
 }
 #' Helper functions for extracting variant IDs corresponding to previously published
-#' barcodes
+#' barcodes.
 #' 
 getBarcodeVariants <- function(gdsfile, publication = "Volkman2008") {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))

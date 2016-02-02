@@ -23,9 +23,6 @@ processGATK <- function(gdsfile, ref.allele) {
     else if (ref.allele == 1L) {
         return(read_counts[, alt_index])
     }
-    
-
-    
 }
 
 processVarscan <- function(gdsfile, ref.allele) {
@@ -111,7 +108,7 @@ callMajor <- function(gdsfile, get.nucleotides = FALSE) {
         # generate character vectors containing nucleotides
         ref.alleles <- as.character(ref(gdsfile))
         alt.alleles <- sapply(1:ncol(gt_matrix), 
-                              function(i) as.character(alt(variants)[[i]]))
+                              function(i) as.character(alt(gdsfile)[[i]]))
         # pre-assign matrix to fill
         nt_matrix <- matrix(NA, nrow = nrow(gt_matrix), ncol = ncol(gt_matrix))
         # array indexes for bases, second column will contain
@@ -316,4 +313,8 @@ getFws <- function(gdsfile) {
     fws <- apply(mu.sample.het, 2, function(x) 1-lm(x ~ mu.population.het -1)$coeff)
                              
     fws
+}
+
+getBAFvar <- function(gdsfile, window.size, shift) {
+    
 }
