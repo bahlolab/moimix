@@ -49,3 +49,266 @@ extractBarcode <- function(gdsfile, variant.id, barcode.file) {
     # return the final barcode
     invisible(final_barcode)
 }
+
+#' Helper function for producing data frame of genomic coordinates
+#' 
+getCoordinates <- function(gdsfile) {
+    stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
+    data.frame(chromosome = seqGetData(gdsfile, "chromosome"),
+               position = seqGetData(gdsfile, "position"),
+               variant.id = seqGetData(gdsfile, "variant.id"),
+               stringsAsFactors = FALSE)
+}
+#' Helper functions for extracting variant IDs corresponding to previously published
+#' barcodes
+#' 
+getBarcodeVariants <- function(gdsfile, publication = "Volkman2008") {
+    stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
+    stopifnot(publication %in% c("Volkman2008", "Harrison2016"))
+    
+    all_coordinates <- getCoordinates(gdsfile)
+    publication_coordinates <- barcodes(publication)
+    
+    merge(publication_coordinates, all_coordinates, 
+          by = c("chromosome", "position"))
+    
+}
+ 
+barcodes <- function(publication) {
+    if(publication == "Volkman2008"){
+        volkman.data <- matrix(c("Pf_01_000130573",1,130573, "Pf_01_000539044",1,539044,
+                                 "Pf_02_000842803",2,842803,"Pf_04_000282592",4,282592,
+                                 "Pf_05_000931601",5,931601,"Pf_06_000145472",6,145472,
+                                 "Pf_06_000937750",6,937750,"Pf_07_000277104", 7,277104,
+                                 "Pf_07_000490877", 7,490877,"Pf_07_000545046",7,545046,
+                                 "Pf_07_000657939", 7,657939,"Pf_07_000671839",7,671839,  
+                                 "Pf_07_000683772",7,683772,"Pf_07_000792356",7,792356,
+                                 "Pf_07_001415182",7,1415182,"Pf_08_000613716",8,613716,
+                                 "Pf_09_000634010",9,634010, "Pf_10_000082376",10,82376,  
+                                 "Pf_10_001403751",10,1403751,"Pf_11_000117114",11,117114,
+                                 "Pf_11_000406215",11,406215, "Pf_13_000158614",13,158614,
+                                 "Pf_13_001429265",13,1429265,"Pf_14_000755729",14,755729), 
+                               nrow = 24, ncol = 3, byrow = TRUE)
+        volkman.data <- data.frame(volkman.data, stringsAsFactors = FALSE)
+        names(volkman.data) <- c("id", "chromosome", "position")
+        volkman.data$chromosome <- paste0("Pf3D7_", 
+                                          formatC(as.numeric(volkman.data$chromosome), 
+                                                  width = 2, format = "d", flag = "0"),
+                                          "_v3")
+        volkman.data$position <- as.integer(volkman.data$position)
+        return(volkman.data)
+    } else if (publication == "Harrison2016") {
+        harrison.data1 <- "Pf3D7_01_0130339_r_V
+        Pf3D7_02_0239330_r
+        Pf3D7_03_0887819_r_V
+        Pf3D7_05_0195382_r
+        Pf3D7_06_0568422_r
+        Pf3D7_07_0699262_r_V
+        Pf3D7_09_0286075_r_V
+        Pf3D7_10_0719290_r
+        Pf3D7_11_1329813_r
+        Pf3D7_12_0802744_r_V
+        Pf3D7_13_0714722_r_V
+        Pf3D7_14_0564447_r
+        Pf3D7_01_0149598_r
+        Pf3D7_02_0569046_r
+        Pf3D7_03_0988909_r
+        Pf3D7_05_0424060_r
+        Pf3D7_06_0858307_r
+        Pf3D7_08_0230137_r_V
+        Pf3D7_09_0465814_r
+        Pf3D7_10_0946049_r
+        Pf3D7_11_1640669_r_V
+        Pf3D7_12_1415948_r
+        Pf3D7_13_1073238_r
+        Pf3D7_14_0755731_r_V
+        Pf3D7_01_0167899_r
+        Pf3D7_02_0666154_r_V
+        Pf3D7_04_0276127_r_V
+        Pf3D7_05_0680484_r
+        Pf3D7_06_1241113_r
+        Pf3D7_08_0252120_r
+        Pf3D7_09_0678121_r
+        Pf3D7_10_1054014_r
+        Pf3D7_11_1713188_r_V
+        Pf3D7_12_1663324_r_V
+        Pf3D7_13_1229674_r_V
+        Pf3D7_14_1199242_r_V
+        Pf3D7_01_0283520_r
+        Pf3D7_02_0736729_r
+        Pf3D7_04_0375057_r_V
+        Pf3D7_05_0840339_r_V
+        Pf3D7_07_0221722_r_V
+        Pf3D7_08_0422505_r
+        Pf3D7_09_0885068_r_V
+        Pf3D7_10_1138019_r
+        Pf3D7_11_1810850_r
+        Pf3D7_12_1665622_r_V
+        Pf3D7_13_1459259_r
+        Pf3D7_14_1405370_r_V
+        Pf3D7_01_0328993_r
+        Pf3D7_03_0361403_r
+        Pf3D7_04_0838218_r_V
+        Pf3D7_05_1215239_r
+        Pf3D7_07_0226222_r_V
+        Pf3D7_08_0477453_r_V
+        Pf3D7_09_0924471_r
+        Pf3D7_10_1322191_r
+        Pf3D7_11_1816229_r_V
+        Pf3D7_12_1948368_r
+        Pf3D7_13_2711227_r_V
+        Pf3D7_14_1551150_r_V
+        Pf3D7_01_0487057_r
+        Pf3D7_03_0683314_r
+        Pf3D7_04_0889062_r_V
+        Pf3D7_06_0145475_r_V
+        Pf3D7_07_0421420_r_V
+        Pf3D7_08_0526923_r_V
+        Pf3D7_10_0088249_r
+        Pf3D7_11_0115953_r_V
+        Pf3D7_12_0698136_r_V
+        Pf3D7_13_0143109_r_V
+        Pf3D7_14_0082608_r
+        Pf3D7_14_1758840_r_V
+        Pf3D7_02_0137008_r_V
+        Pf3D7_03_0708034_r
+        Pf3D7_04_0900665_r_V
+        Pf3D7_06_0182965_r_V
+        Pf3D7_07_0477049_r
+        Pf3D7_08_1169948_r
+        Pf3D7_10_0113618_r_V
+        Pf3D7_11_0408600_r_V
+        Pf3D7_12_0702022_r_V
+        Pf3D7_13_0146745_r_V
+        Pf3D7_14_0256529_r_V
+        Pf3D7_14_2268700_r_V
+        Pf3D7_02_0166372_r_V
+        Pf3D7_03_0883199_r
+        Pf3D7_04_0993098_r_V
+        Pf3D7_06_0270810_r
+        Pf3D7_07_0635776_r_V
+        Pf3D7_09_0087894_r
+        Pf3D7_10_0490648_r
+        Pf3D7_11_1243999_r
+        Pf3D7_12_0786224_r_V
+        Pf3D7_13_0403839_r_V
+        Pf3D7_14_0494376_r
+        Pf3D7_14_2499205_r_V
+        Pf3D7_01_0165588_i
+        Pf3D7_02_0683477_i
+        Pf3D7_04_0110821_i_L
+        Pf3D7_05_0184854_i_L
+        Pf3D7_06_0965729_i
+        Pf3D7_08_0229173_i_L
+        Pf3D7_09_0787358_i_L
+        Pf3D7_10_0529296_i
+        Pf3D7_11_0998642_i
+        Pf3D7_12_0762772_i
+        Pf3D7_13_1970085_i_L
+        Pf3D7_14_0832594_i
+        Pf3D7_01_0276509_i
+        Pf3D7_02_0805838_i
+        Pf3D7_04_0176045_i_L
+        Pf3D7_05_0302306_i_L
+        Pf3D7_06_1025851_i
+        Pf3D7_08_0260173_i_L
+        Pf3D7_09_0991004_i_L
+        Pf3D7_10_1318156_i_L
+        Pf3D7_11_1344997_i
+        Pf3D7_12_0933018_i_L
+        Pf3D7_13_1987528_i
+        Pf3D7_14_1159255_i_L
+        Pf3D7_01_0308385_i
+        Pf3D7_03_0118001_r
+        Pf3D7_04_0632106_i
+        Pf3D7_05_0601876_i
+        Pf3D7_07_0457641_i_L
+        Pf3D7_08_0413067_i_V
+        Pf3D7_09_1095983_i_L
+        Pf3D7_10_1324636_i
+        Pf3D7_11_1505533_i
+        Pf3D7_12_0989679_i_L
+        Pf3D7_13_2066201_i
+        Pf3D7_14_1942874_i_L
+        Pf3D7_01_0339504_i_LV
+        Pf3D7_03_0334604_i
+        Pf3D7_04_0992627_i
+        Pf3D7_05_0940533_i_L
+        Pf3D7_07_0506984_i_LV
+        Pf3D7_08_0509321_i
+        Pf3D7_09_1280344_i
+        Pf3D7_10_1570065_i
+        Pf3D7_11_1637389_i_L
+        Pf3D7_12_1963992_i_L
+        Pf3D7_13_2426639_i_L
+        Pf3D7_14_2022712_i_L
+        Pf3D7_02_0271860_i
+        Pf3D7_03_0482674_i
+        Pf3D7_04_1032565_i_L
+        Pf3D7_06_0363713_i_L
+        Pf3D7_07_0706074_i
+        Pf3D7_08_0585583_i_L
+        Pf3D7_10_0093074_i_L
+        Pf3D7_11_0186408_i
+        Pf3D7_12_0314071_i
+        Pf3D7_13_0531242_i_L
+        Pf3D7_14_0379850_i_L
+        Pf3D7_14_2111109_i_L
+        Pf3D7_02_0333282_i_L
+        Pf3D7_03_0530553_i
+        Pf3D7_04_1128499_i_L
+        Pf3D7_06_0425896_i
+        Pf3D7_07_1220813_i_L
+        Pf3D7_08_0627306_i_L
+        Pf3D7_10_0096411_i_L
+        Pf3D7_11_0281726_i_V
+        Pf3D7_12_0532791_i
+        Pf3D7_13_0619220_i_L
+        Pf3D7_14_0453287_i
+        Pf3D7_14_2151020_i_L
+        Pf3D7_02_0338281_i_L
+        Pf3D7_03_0692344_i_L
+        Pf3D7_05_0132132_i
+        Pf3D7_06_0697324_i_L
+        Pf3D7_07_1240938_i
+        Pf3D7_09_0156227_i_L
+        Pf3D7_10_0341106_i
+        Pf3D7_11_0328548_i
+        Pf3D7_12_0558539_i
+        Pf3D7_13_1147866_i
+        Pf3D7_14_0674689_i
+        Pf3D7_14_2755887_i_L
+        Pf3D7_02_0415166_i
+        Pf3D7_03_0716603_i
+        Pf3D7_05_0159730_i_L
+        Pf3D7_06_0799699_i_L
+        Pf3D7_07_1308311_i
+        Pf3D7_09_0583566_i
+        Pf3D7_10_0408872_i
+        Pf3D7_11_0484376_i
+        Pf3D7_12_0710369_i_L
+        Pf3D7_13_1747777_i
+        Pf3D7_14_0755731_r_V
+        Pf3D7_14_2820946_i"
+        harrison.data1 <- unlist(strsplit(harrison.data1, "\n"))
+        # extract chromosome
+        chrom.regex <- regexpr("Pf3D7_[0-9]{2}", harrison.data1) 
+        chromosome <- paste0(substr(harrison.data1, chrom.regex, chrom.regex+attr(chrom.regex, "match.length")),
+                             "v3")
+        # numbers will match at least 3 digits
+        pos.regex <- regexpr("[0-9]{3,}", harrison.data1)
+        position <- as.integer(substr(harrison.data1, pos.regex, 
+                           pos.regex-1+attr(pos.regex, "match.length")))
+        is.volkmanSNP <- grepl("_V$", harrison.data1)
+        
+        harrison.data <- data.frame(chromosome =  chromosome,
+                   position = position,
+                   is.volkmanSNP = is.volkmanSNP,
+                   stringsAsFactors = FALSE)
+        # drop replicate SNP
+        harrison.data[!duplicated(harrison.data), ]
+        
+    } else {
+        stop("No barcode corresponding to that publication.")
+    }
+}
