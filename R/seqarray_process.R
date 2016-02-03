@@ -134,7 +134,7 @@ callMajor <- function(gdsfile, get.nucleotides = FALSE) {
 #' @return a numeric matrix of size l by n where l is the number of samples
 #' and n is the number of SNPs. 
 #' @export
-getBAF <- function(gdsfile) {
+getBAF <- function(gdsfile, split_by_chrom = FALSE) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     # estimate NRAF matrix, currently on GATK vcf file support
     vars <- seqSummary(gdsfile, check="none", verbose=FALSE)$format$var.name
@@ -315,6 +315,35 @@ getFws <- function(gdsfile) {
     fws
 }
 
-getBAFvar <- function(gdsfile, window.size, shift) {
+#' Estimate variance in BAF spectra along the genome in non-overlapping windows
+#' 
+#' 
+getBAFvar <- function(gdsfile, window.size) {
+    # checks
+    stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
+    stopifnot(is.numeric(window.size) & length(window.size) == 1)
+    stopifnot(is.finite(window.size))
+    
+    # step 1 -  retrieve BAF matrix
+    baf <- getBAF(gdsfile)
+    
+    # step 2 -  contstruct windows by chromosome
+    generateWindows <- function(variant.id, positions, window.size) {
+        start <- min(positions)
+        end <- max(positions)
+        data.frame(variant.id = variant.id, 
+                   position = positions,
+                   window =findInterval(positions, seq(start, end, by = window.size)))
+    }
+    coord <- getCoordinates(gdsfile)
+    # split by  chromosome
+    
+    coord_by_chrom <- split(coord, coord$chromosome)
+    intervals <- lapply(coord_by_chrom, 
+                        function(y) generateWindows(y$variant.id, y$position, window.size))
+    
+    intervals
     
 }
+
+
