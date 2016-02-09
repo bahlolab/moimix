@@ -302,23 +302,53 @@ getFws <- function(gdsfile) {
     # compute heterozygosity at population level
     population.het <- getHeterozygosity(gdsfile)
     # create MAF bins, 0..0.05, 0.05..0.1,...,0.45..0.5 
-    maf.bins <- findInterval(getMAF(gdsfile), seq(0, 0.5, length.out = 21))
+    maf.bins <- findInterval(getMAF(gdsfile), seq(0, 0.5, length.out = 11))
     # find mean population heterozygoisty values
-    mu.population.het <- tapply(population.het, bins, mean)
+    mu.population.het <- tapply(population.het, maf.bins, mean)
     
     # find mean sample heterozygosity values
     mu.sample.het <- apply(sample.het, 1, 
-                           function(x) tapply(x, bins, mean, na.rm = TRUE))
+                           function(x) tapply(x, maf.bins, mean, na.rm = TRUE))
     
     fws <- apply(mu.sample.het, 2, function(x) 1-lm(x ~ mu.population.het -1)$coeff)
                              
     fws
 }
 
+generateWindows <- function(variant.id, positions, window.size) {
+    start <- min(positions)
+    end <- max(positions)
+    data.frame(variant.id = variant.id, 
+               position = positions,
+               window =findInterval(positions, seq(start, end, by = window.size)))
+}
+
+averageVar <- function(window, baf_matrix, by.sample) {
+    if(length(window$variant.id) > 1 ) {
+        sample.var <- apply(baf_matrix[, window$variant.id], 1, 
+                            var, na.rm = TRUE)
+        if (by.sample) {
+            return(sample.var)
+        } else {
+            mean(sample.var, na.rm = TRUE)
+        }
+        
+    } else {
+            NA
+    }
+}
+
 #' Estimate variance in BAF spectra along the genome in non-overlapping windows
 #' 
-#' 
-getBAFvar <- function(gdsfile, window.size) {
+#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
+#' @param window.size integer size of window in bp
+#' @param by.sample FALSE partition by sample
+#' @details This function computes 
+#' @return data.frame with chromosome, window id, start, midpoint and end of window
+#' and estimates of average variance for window. If by.sample is TRUE, then there
+#' will be additional sample.id column with   
+#' @export 
+getBAFvar <- function(gdsfile, window.size, by.sample = FALSE) {
     # checks
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     stopifnot(is.numeric(window.size) & length(window.size) == 1)
@@ -328,22 +358,65 @@ getBAFvar <- function(gdsfile, window.size) {
     baf <- getBAF(gdsfile)
     
     # step 2 -  contstruct windows by chromosome
-    generateWindows <- function(variant.id, positions, window.size) {
-        start <- min(positions)
-        end <- max(positions)
-        data.frame(variant.id = variant.id, 
-                   position = positions,
-                   window =findInterval(positions, seq(start, end, by = window.size)))
-    }
     coord <- getCoordinates(gdsfile)
     # split by  chromosome
-    
     coord_by_chrom <- split(coord, coord$chromosome)
     intervals <- lapply(coord_by_chrom, 
                         function(y) generateWindows(y$variant.id, y$position, window.size))
     
-    intervals
+    # further split list by windows
+    intervals_by_window <- lapply(intervals, function(y) split(y, y$window))
     
+    # compute the median position for each window for plotting purposes
+    median_pos <- lapply(intervals_by_window, 
+                         function(chrom) lapply(chrom, 
+                                                function(window) data.frame(start = min(window$position),
+                                                                            end = max(window$position),
+                                                                            mid = median(window$position))))
+    median_pos <- do.call(rbind, lapply(median_pos, 
+                                        function(x) do.call(rbind, x)))
+    
+    ids <- matrix(unlist(strsplit(rownames(median_pos), split = "\\.")), 
+                  ncol = 2, byrow = TRUE)
+    median_pos$chr <- ids[,1]
+    median_pos$window <-ids[,2]
+    rownames(median_pos) <- NULL
+    
+    # now apply variance to each window in the list
+    baf_var <- lapply(intervals_by_window, 
+                      function(chrom) lapply(chrom, 
+                                             function(window) averageVar(window, baf, by.sample)))
+    if (by.sample) {
+        validDF <- function(x) {
+            if (length(x) > 1) {
+                summary.df <- data.frame(sample.id = names(x), vb = unlist(x))
+                rownames(summary.df) <- NULL
+                summary.df
+            }
+        }
+        baf_var <- lapply(baf_var, 
+                          function(chrom) lapply(chrom, function(x) validDF(x)))
+
+        baf_var_df <- do.call(rbind, lapply(baf_var, 
+                                     function(y) do.call(rbind, y)))
+        ids <- matrix(unlist(strsplit(rownames(baf_var_df), split = "\\."))[1:2], 
+                      ncol = 2, byrow = TRUE)
+        baf_var_df$chr <- ids[,1]
+        baf_var_df$window <- ids[,2]
+        rownames(baf_var_df) <- NULL
+        # merge in 
+        return(merge(median_pos, baf_var_df, by = c("chr", "window")))
+        
+    }
+    
+    # much simpler if we aren't doing this by sample
+    baf_var_df <- do.call(rbind, lapply(baf_var, 
+                                        function(x) data.frame(vb = unlist(x))))
+
+    baf_var_df$chr <- ids[,1]
+    baf_var_df$window <- ids[,2]
+    rownames(baf_var_df) <- NULL
+    # merge in 
+    merge(median_pos, baf_var_df, by = c("chr", "window"))
+   
 }
-
-
