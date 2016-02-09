@@ -399,8 +399,8 @@ getBAFvar <- function(gdsfile, window.size, by.sample = FALSE) {
 
         baf_var_df <- do.call(rbind, lapply(baf_var, 
                                      function(y) do.call(rbind, y)))
-        ids <- matrix(unlist(strsplit(rownames(baf_var_df), split = "\\."))[1:2], 
-                      ncol = 2, byrow = TRUE)
+        ids <- matrix(unlist(strsplit(rownames(baf_var_df), split = "\\.")), 
+                      ncol = 3, byrow = TRUE)
         baf_var_df$chr <- ids[,1]
         baf_var_df$window <- ids[,2]
         rownames(baf_var_df) <- NULL
@@ -420,3 +420,4 @@ getBAFvar <- function(gdsfile, window.size, by.sample = FALSE) {
     merge(median_pos, baf_var_df, by = c("chr", "window"))
    
 }
+
