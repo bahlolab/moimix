@@ -420,4 +420,3 @@ getBAFvar <- function(gdsfile, window.size, by.sample = FALSE) {
     merge(median_pos, baf_var_df, by = c("chr", "window"))
    
 }
-
