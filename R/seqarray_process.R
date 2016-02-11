@@ -186,7 +186,7 @@ plotBAF <- function(gdsfile, loci = NULL, outdir) {
         breaks <- tapply(1:ncol(baf), 
                          seqGetData(gdsfile, "chromosome"), median)
         for(sample in sample.id) {
-            png(paste0(outdir, "/", sample, "_BAF_all", ".png"))
+            pdf(paste0(outdir, "/", sample, "_BAF_all", ".pdf"))
             plot(baf[sample, ], xaxt ="n", xlab = "", 
                  ylim = c(0,1), ylab = "SNV frequency", 
                  col = scales::alpha("black", 0.5), pch = 16)
@@ -204,7 +204,7 @@ plotBAF <- function(gdsfile, loci = NULL, outdir) {
         sample.id <- rownames(baf)
         
         for(sample in sample.id) {
-            png(paste0(outdir, "/", sample, "_BAF_", loci$name, ".png"))
+            pdf(paste0(outdir, "/", sample, "_BAF_", loci$name, ".pdf"))
             plot(baf[sample, ], xaxt = "n", xlab = "", ylim = c(0,1), 
                  ylab = "SNV frequency", pch = 16)
             dev.off()
