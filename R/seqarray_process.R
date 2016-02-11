@@ -79,30 +79,38 @@ alleleCounts <- function(gdsfile, ref.allele = NULL) {
 #' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
 #' @param get.nucleotides FALSE logical indicating whether to replace allele
 #' with nucleotide bases
+#' @param use.hets FALSE logical indicating whether to code hets sepeartely
 #' 
 #' @description Extract major alleles from a GDS file
 #' using the non-reference allele frequency (NRAF) estimated from 
 #' read counts directly. In the case of RAF = 0.5 we select the
-#' major allele randomly from Bernoulli distribution.
-#' @return a binary matrix containing reference and alternate alleles
-#' or if get.nucleotides a character matrix
+#' major allele randomly from Bernoulli distribution if use.hets is FALSE. Other
+#' wise hets are coded as 3. If get.nucleotides is TRUE a character matrix is
+#' retruned with the alleles coded, otherwise if use.hets the allele is coded as
+#' N. 
+#' @return a binary matrix  or character matrix containing reference and alternate alleles
 #' @importFrom SeqArray ref alt
 #' @export
-callMajor <- function(gdsfile, get.nucleotides = FALSE) {
+callMajor <- function(gdsfile, get.nucleotides = FALSE, use.hets = FALSE) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     # estimate BAF matrix
     baf <- getBAF(gdsfile)
     gt_matrix <- baf
     # if baf is less than 0.5, we'll assign reference allele
-    gt_matrix[baf < 0.5] <- 0
+    gt_matrix[baf < 0.5] <- 1
     # if baf is greater than 0.5 we'll assign alternate allele
-    gt_matrix[baf > 0.5] <- 1
+    gt_matrix[baf > 0.5] <- 2
     # if baf is between then we'll assign randomly
     # first need to find bafs == 0.5 and not missing
     index <- baf == 0.5 & !is.na(baf)
-    gt_matrix[index] <- rbinom(n = length(gt_matrix[index]), 
-                               size = 1, 
-                               prob = 0.5)
+    if(use.hets) {
+        gt_matrix[index] <- 3
+    } else {
+        gt_matrix[index] <- rbinom(n = length(gt_matrix[index]), 
+                                   size = 1, 
+                                   prob = 0.5)
+    }
+    
     
     if (get.nucleotides) {
         # generate character vectors containing nucleotides
@@ -113,13 +121,19 @@ callMajor <- function(gdsfile, get.nucleotides = FALSE) {
         nt_matrix <- matrix(NA, nrow = nrow(gt_matrix), ncol = ncol(gt_matrix))
         # array indexes for bases, second column will contain
         # index for character vector assigned above
-        ref.indices <- which(gt_matrix == 0, arr.ind = TRUE)
-        alt.indices <- which(gt_matrix == 1, arr.ind = TRUE)
+        ref.indices <- which(gt_matrix == 1, arr.ind = TRUE)
+        alt.indices <- which(gt_matrix == 2, arr.ind = TRUE)
         miss.indices <- which(is.na(gt_matrix), arr.ind = TRUE)
         # fill matrix
         nt_matrix[ref.indices] <- ref.alleles[ref.indices[,2]]
         nt_matrix[alt.indices] <- alt.alleles[alt.indices[,2]]
-        nt_matrix[miss.indices] <- "N"
+        nt_matrix[miss.indices] <- "X"
+        if (use.hets) {
+            het.indices <- which(gt_matrix == 3, arr.ind = TRUE)
+            nt_matrix[het.indices] <- "N"
+            return(nt_matrix)
+        }
+        
         return(nt_matrix)
     }
     
