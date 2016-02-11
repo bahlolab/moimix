@@ -29,7 +29,7 @@ extractBarcode <- function(gdsfile, variant.id, barcode.file) {
     seqSetFilter(gdsfile, variant.id = variant.id)
     
     sample.id <- seqGetData(gdsfile, "sample.id")
-    major.alleles <- callMajor(gdsfile, get.nucleotides = TRUE)
+    major.alleles <- callMajor(gdsfile, get.nucleotides = TRUE, use.hets = TRUE)
     # paste haplotypes together
     barcode <- apply(major.alleles, 1, paste, collapse = "")
     # add in sample.id
