@@ -21,6 +21,7 @@
 #' @note Need to look at how COIL constructed it's orginal barcode. Esp. het calls.
 #' @return data.frame containing barcode for each sample
 #' @importFrom SeqArray seqSetFilter seqGetData seqGetFilter
+#' @importFrom SeqVarTools getGenotypeAlleles
 #' @export
 extractBarcode <- function(gdsfile, variant.id, barcode.file) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
@@ -28,10 +29,17 @@ extractBarcode <- function(gdsfile, variant.id, barcode.file) {
     old.filter <- seqGetFilter(gdsfile)
     seqSetFilter(gdsfile, variant.id = variant.id)
     
+    gt <- getGenotypeAlleles(gdsfile)
     sample.id <- seqGetData(gdsfile, "sample.id")
-    major.alleles <- callMajor(gdsfile, get.nucleotides = TRUE, use.hets = TRUE)
+    # find hets and recode 
+    findHets <- apply(gt, 2, 
+                      function(y) unlist(lapply(strsplit(y, "/"), 
+                                                function(x) x[1] != x[2])))
+    gt[!findHets & !is.na(findHets)] <- substr(gt[!findHets], 1, 1)
+    gt[!findHets & !is.na(findHets)] <- "N"
+    gt[is.na(findHets)] <- "X"
     # paste haplotypes together
-    barcode <- apply(major.alleles, 1, paste, collapse = "")
+    barcode <- apply(gt, 1, paste, collapse = "")
     # add in sample.id
     stopifnot(length(sample.id) == length(barcode))
     final_barcode <- data.frame(sample.id, barcode)
