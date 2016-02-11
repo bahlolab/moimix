@@ -36,11 +36,9 @@ extractBarcode <- function(gdsfile, variant.id, barcode.file) {
                       function(y) unlist(lapply(strsplit(y, "/"), 
                                                 function(x) x[1] != x[2])))
     gt[!findHets & !is.na(findHets)] <- substr(gt[!findHets & !is.na(findHets)], 1, 1)
-<<<<<<< HEAD
+
     gt[findHets & !is.na(findHets)] <- "N"
-=======
-    gt[!findHets & !is.na(findHets)] <- "N"
->>>>>>> 8523367db7f51a20fbf27ca5fa6b7173eca53c3e
+
     gt[is.na(findHets)] <- "X"
     # paste haplotypes together
     barcode <- apply(gt, 1, paste, collapse = "")
