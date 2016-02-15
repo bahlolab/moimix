@@ -216,8 +216,6 @@ plotBAF <- function(gdsfile, loci = NULL, outdir) {
     
 }
 
-
-
 #' Compute minor allele frequency 
 #' 
 #' @details Coverage based estimation of minor allele frequences.
@@ -433,4 +431,69 @@ getBAFvar <- function(gdsfile, window.size, by.sample = FALSE) {
     # merge in 
     merge(median_pos, baf_var_df, by = c("chr", "window"))
    
+}
+
+#' Extract PED files from gds
+#' 
+#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
+#' @param use.hets FALSE include heterozygote genotypes
+#' @param out.file prefix of PLINK files for output
+#' @details This function writes a plink .ped and .map file for a given
+#' gdsfile. If the use.hets option is true the genotypes are used as is, other
+#' wise heterzygotes are set to missing. 
+#' @importFrom SeqVarTools getGenotype
+extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
+    # construct the ped file requires 6 columns
+    # Family ID, Individual ID, Paternal ID, Maternal ID, Sex, Phenotype
+    sample.id <- seqGetData(gdsfile, "sample.id")
+    ped_meta <- data.frame(famID = sample.id, indID = sample.id, 
+                           paternalID = 0, maternalID = 0, sex = 1, pheno = 2)
+    
+    # extract samples
+    # if use.hets we will code hets as missing
+    # recode matrix 
+    genotypeRecode <- function(gt, use.hets) {
+        sites <- t(gt)
+        if (use.hets) {
+            return(sites)
+        }
+        else {
+            sites[sites[,1] != sites[,2]] <- NA
+            return(sites)
+        }
+    }
+    # create genotype list
+    gt_list <- seqApply(gdsfile, "genotype", 
+                        FUN = genotypeRecode, use.hets = use.hets, 
+                        margin = "by.variant", as.is = 'list')
+    
+    gt_matrix <- do.call(cbind, gt_list)
+    
+    # recode using plink formats
+    gt_matrix[gt_matrix == 1] <- 2
+    gt_matrix[gt_matrix == 0] <- 1
+    gt_matrix[is.na(gt_matrix)] <- 0
+    
+    ped_file <- paste0(out.file, ".ped")
+    ped_data <- cbind(ped_meta, gt_matrix)
+    final_ped <- file(ped_file, open = "wt")
+    on.exit(close(final_ped))
+    write.table(ped_data, final_ped, row.names = FALSE, col.names = FALSE, quote = FALSE)
+    
+    # map file
+    chr <- seqGetData(gdsfile, "chromosome")
+    pos <- seqGetData(gdsfile, "position")
+    snp_id <- paste0(chr, ":", pos)
+    genetic_distance <- pos / 17000
+    map_data <- data.frame(chr, snp_id, genetic_distance, pos)
+    
+    map_file <- paste0(out.file, ".map")
+    final_map <- file(map_file, open = "wt")
+    on.exit(close(final_map))
+    write.table(map_data, map_file, row.names = FALSE, col.names = FALSE, quote = TRUE)
+    
+    # return list if the user assigns
+    invisible(list(ped = ped_data, map = map_data))
+    
+    
 }
