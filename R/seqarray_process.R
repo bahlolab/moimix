@@ -490,7 +490,7 @@ extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
     map_file <- paste0(out.file, ".map")
     final_map <- file(map_file, open = "wt")
     on.exit(close(final_map))
-    write.table(map_data, map_file, row.names = FALSE, col.names = FALSE, quote = TRUE)
+    write.table(map_data, map_file, row.names = FALSE, col.names = FALSE, quote = FALSE)
     
     # return list if the user assigns
     invisible(list(ped = ped_data, map = map_data))
