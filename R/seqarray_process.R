@@ -468,7 +468,7 @@ extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
                         margin = "by.variant", as.is = 'list')
     
     gt_matrix <- do.call(cbind, gt_list)
-    
+    print(dim(gt_matrix))
     # recode using plink formats
     gt_matrix[gt_matrix == 1] <- 2
     gt_matrix[gt_matrix == 0] <- 1
@@ -476,9 +476,7 @@ extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
     
     ped_file <- paste0(out.file, ".ped")
     ped_data <- cbind(ped_meta, gt_matrix)
-    final_ped <- file(ped_file, open = "wt")
-    on.exit(close(final_ped))
-    write.table(ped_data, final_ped, row.names = FALSE, col.names = FALSE, quote = FALSE)
+    write.table(ped_data, ped_file, row.names = FALSE, col.names = FALSE, quote = FALSE)
     
     # map file
     chr <- seqGetData(gdsfile, "chromosome")
@@ -488,8 +486,6 @@ extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
     map_data <- data.frame(chr, snp_id, genetic_distance, pos)
     
     map_file <- paste0(out.file, ".map")
-    final_map <- file(map_file, open = "wt")
-    on.exit(close(final_map))
     write.table(map_data, map_file, row.names = FALSE, col.names = FALSE, quote = FALSE)
     
     # return list if the user assigns
