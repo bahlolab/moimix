@@ -88,7 +88,7 @@ scaledProportion <- function(x, threshold, scale) {
 coverageBySample <- function(coverage_list, threshold) {
     
     stopifnot(inherits(coverage_list, 'list') && length(coverage_list) == 2)
-    stopifnot(is.finite(threshold) && is.number(threshold))
+    stopifnot(is.finite(threshold) && is.numeric(threshold))
     total_depth <- coverage_list$ref + coverage_list$alt
     nsamples <- nrow(total_depth)
     apply(total_depth, 2, scaledProportion, threshold = threshold, scale = nsamples)
@@ -104,7 +104,7 @@ coverageBySample <- function(coverage_list, threshold) {
 #' @export
 coverageBySNP <- function(coverage_list, threshold) {
     stopifnot(inherits(coverage_list, 'list') && length(coverage_list) == 2)
-    stopifnot(is.finite(threshold) && is.number(threshold))
+    stopifnot(is.finite(threshold) && is.numeric(threshold))
     
     total_depth <- coverage_list$ref + coverage_list$alt    
     nsnps <- ncol(total_depth)
