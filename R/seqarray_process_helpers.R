@@ -153,14 +153,14 @@ getGATKInfo <- function(gdsfile) {
     
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     
-    data.frame(chr = seqGetData(genofile, "chromosome"),
-               pos = seqGetData(genofile, "position"),
-               variant.id = seqGetData(genofile, "variant.id"),
-               qd = seqGetData(genofile, "annotation/info/QD"),
-               mq = seqGetData(genofile, "annotation/info/MQ"),
-               fs = seqGetData(genofile, "annotation/info/FS"),
-               mqrank = seqGetData(genofile, "annotation/info/MQRankSum"),
-               haplotypescore = seqGetData(genofile, "annotation/info/HaplotypeScore"),
-               readposranksum = seqGetData(genofile, "annotation/info/ReadPosRankSum"),
+    data.frame(chr = seqGetData(gdsfile, "chromosome"),
+               pos = seqGetData(gdsfile, "position"),
+               variant.id = seqGetData(gdsfile, "variant.id"),
+               qd = seqGetData(gdsfile, "annotation/info/QD"),
+               mq = seqGetData(gdsfile, "annotation/info/MQ"),
+               fs = seqGetData(gdsfile, "annotation/info/FS"),
+               mqrank = seqGetData(gdsfile, "annotation/info/MQRankSum"),
+               haplotypescore = seqGetData(gdsfile, "annotation/info/HaplotypeScore"),
+               readposranksum = seqGetData(gdsfile, "annotation/info/ReadPosRankSum"),
                stringsAsFactors = FALSE)
 }
