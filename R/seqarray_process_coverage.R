@@ -108,5 +108,5 @@ coverageBySNP <- function(coverage_list, threshold) {
     
     total_depth <- coverage_list$ref + coverage_list$alt    
     nsnps <- ncol(total_depth)
-    apply(total_coverage, 1, scaledProportion, threshold = threshold, scale = nsnps)
+    apply(total_depth, 1, scaledProportion, threshold = threshold, scale = nsnps)
 }
