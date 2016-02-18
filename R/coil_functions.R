@@ -60,15 +60,7 @@ extractBarcode <- function(gdsfile, variant.id, barcode.file) {
     invisible(final_barcode)
 }
 
-#' Helper function for producing data frame of genomic coordinates
-#' 
-getCoordinates <- function(gdsfile) {
-    stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
-    data.frame(chromosome = seqGetData(gdsfile, "chromosome"),
-               position = seqGetData(gdsfile, "position"),
-               variant.id = seqGetData(gdsfile, "variant.id"),
-               stringsAsFactors = FALSE)
-}
+
 #' Helper functions for extracting variant IDs corresponding to previously published
 #' barcodes.
 #' 
