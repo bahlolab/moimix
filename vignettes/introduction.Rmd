@@ -1,58 +1,123 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
+title: "Introduction to moimix package"
+author: "Stuart Lee"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{introduction}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+```{r set-options, echo=FALSE, cache=FALSE}
+options(width = 80)
+```
+<style type="text/css">
+.td {
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+    width: 120%;
 
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
+}
+</style>
 
-## Vignette Info
+Estimating multiple infections from variant data obtained using massively parallel 
+sequencing experiments can be done in several ways using `moimix`. 
 
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
+The core function in `moimix` is  `binomix` which is an interface to
+a binomial mixture model estimation procedure using the R package `flexmix`. The input
+to this function is a matrix of read counts supporting the reference and alternate alleles
+for all the variants in data. 
 
-## Styles
+In this vignette, we will introduce some key functions in `moimix` and how
+to set up your variant data to estimate some measures of multiplicity of infection. 
 
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
+## Key functions in `moimix`
 
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
+Function | Description
+---------|-------------
+binommix | estimate MOI using binomial mixture model
+alleleCounts | extract a matrix of read counts
+getBAF | estimate B-allele frequencies from read counts
+plotBAF | plot the B-allele frequency spectra genome-wide
+getMAF | esimate minor allele frequencies from read counts
+getFws | estimate within isolate diversity according to Manske et. al, 2012
+callMajor | call major haplotypes using B-allele frequencies
+extractCOIL | Output a COIL barcode file
+extractPED | Create haploid PLINK PED file 
 
-## Figures
+## Data Formats
 
-The figure sizes have been customised so that you can easily put two images side-by-side. 
+`moimix` assumes that variants have been called either from whole-genome/exome or RNA
+sequencing and the variant calling algorithm used outputs a variant call format (VCF) version 4.1
+file. We also assume that each sample in the VCF file has been annotated with a AD tag
+at the variant sites. Currently, we have tested the functions using output from
+GATK UnifiedGenotyper and HaplotypeCaller algorithms. 
 
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+`moimix` requires that the VCF file is then converted to the Genomic Data Storage (GDS) format. The GDS format provides a fast way of manipulating large VCF files in R. We recommend using the `SeqArray` package 
+for both conversion and manipulating GDS files.
+
+If you are just interested in running the binomix procedure, then you do not need
+to have a GDS file. Simply, for each sample construct a matrix with 2 columns
+correpsonding the read counts for the A and B alleles. Then pass this matrix
+to the `binomix` function.
+
+
+### Converting a VCF to GDS format
+To convert a tabixed gzipped VCF file to the GDS format use the `SeqArray`
+package.
+
+```{r, eval = FALSE}
+library(SeqArray)
+
+seqVCF2GDS("/path/to/my/file.vcf.gz", "/path/to/my/file.gds")
+
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
-
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
-
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
-
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+To read the GDS file into R, use the `seqOpen` function and to check that its
+output matches the orginal VCF file use seqSummary.
+```{r, eval = FALSE}
+library(SeqArray)
+my_vcf <-seqOpen("/path/to/my/file.gds")
+seqSummary(my_vcf)
 ```
 
-Also a quote using `>`:
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+### Estimating the BAF matrix
+```{r, eval = FALSE}
+library(moimix)
+baf_matrix <- getBAF(my_vcf)
+```
+
+### Plotting BAF signals
+```{r, eval = FALSE}
+plotBAF(my_vcf, outdir = "/path/to/figures/")
+```
+
+### Estimating $F_{ws}$ 
+```{r, eval = FALSE}
+getFws(my_vcf)
+```
+
+### Estimating MOI with `binommix`
+
+```{r, eval = FALSE}
+# first generate matrix of read counts for ref and alt alleles
+counts <- alleleCounts(my_vcf)
+
+# to fit a model on the first sample
+y <- cbind(counts$ref[1,], counts$alt[2,])
+
+m1 <- binommix(y, k = 2)
+# to get parameter estimates use getTheta
+getTheta(m1)
+
+```
+
+## Session Info
+```{r}
+sessionInfo()
+```
+
+## References
+
+1. flexmix package - https://cran.r-project.org/web/packages/flexmix/index.html
+2. SeqArray package - http://bioconductor.org/packages/release/bioc/html/SeqArray.html
