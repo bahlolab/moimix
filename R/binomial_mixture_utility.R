@@ -184,7 +184,6 @@ ciMM <- function(y, model, alpha = 0.05) {
 #' @param k number of components
 #' @param mu true mixture components
 #' @param pi true mixture weights
-#' @export
 sampleMM <- function(n, N, k, mu, pi) {
     # assert that pi and mu must have length k
     stopifnot(length(pi) == k)
