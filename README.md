@@ -36,7 +36,7 @@ the first column is the number of reads supporting the reference allele and the
 second column is the number of reads supporting the alternate allele.
 
 ## How do I use _moimix_?
-Coming soon.
+See the [introduction vignette](https://github.com/sa-lee/moimix/blob/master/vignettes/introduction.Rmd) for usage examples.
 
 ## How do I cite _moimix_?
 Manuscript is currently in preparation. If you use moimix please cite the following
