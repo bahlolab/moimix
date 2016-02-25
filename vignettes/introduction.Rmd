@@ -5,19 +5,12 @@ date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{introduction}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{rmarkdown::render}
   %\VignetteEncoding{UTF-8}
 ---
 ```{r set-options, echo=FALSE, cache=FALSE}
 options(width = 80)
 ```
-<style type="text/css">
-.td {
-
-    width: 120%;
-
-}
-</style>
 
 Estimating multiple infections from variant data obtained using massively parallel 
 sequencing experiments can be done in several ways using `moimix`. 
@@ -116,8 +109,6 @@ getTheta(m1)
 ```{r}
 sessionInfo()
 ```
-
 ## References
-
 1. flexmix package - https://cran.r-project.org/web/packages/flexmix/index.html
 2. SeqArray package - http://bioconductor.org/packages/release/bioc/html/SeqArray.html

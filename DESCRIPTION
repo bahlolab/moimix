@@ -13,7 +13,9 @@ License: MIT + file LICENSE
 LazyData: true
 Imports:
     MCMCpack,
-    foreach
+    foreach,
+    SeqArray,
+    SeqVarTools
 Suggests:
     testthat,
     knitr,
