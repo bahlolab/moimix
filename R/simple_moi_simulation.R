@@ -25,16 +25,15 @@
 #'  read.counts an n.samples by n.snps matrix containing read counts supporting each SNV
 #'  error.counts an n.samples by n.snps matrix containing number of error reads 
 #' @importFrom MCMCpack rdirichlet
+#' @importFrom foreach foreach
 #' @export
-
-simulate_moi <- function(n.samples, n.snps, moi, coverage, error,
+simulateMOI <- function(n.samples, n.snps, moi, coverage, error,
                          pi.true = NULL, mu.true = NULL, aaf = NULL,
                          aaf.dist, ...) {
     # I/0 checking
     if (moi < 2 || moi > 5) {
         stop("Number of infections must be between 2 and 5, inclusive")
     }
-    
     
     if (length(coverage) != n.samples) {
         stop("coverage vector must have same length as n.samples")
