@@ -7,7 +7,6 @@ Description: R package to evaluate multiplicity of infection (MOI) of malaria
     single nucleotide variant (SNV) data from isolates with MOI. It provides
     methods to estimate MOI using an EM algorithm.
 Depends:
-    foreach,
     flexmix
 License: MIT + file LICENSE
 LazyData: true
