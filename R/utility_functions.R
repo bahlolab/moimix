@@ -2,12 +2,12 @@
 # Author: Stuart Lee, Katherine Smith
 # Description: Utility functions for the haldane package
 #--- Datasets
-#' Minor Allele Frequenies of 86,000 round Plasmodium falciparum SNPs.
+#' Minor Allele Frequenies of ~ 86,000 Plasmodium falciparum SNPs.
 #'
-#' A dataset containing information about exonic SNPs Plasmodium falciparum
+#' A dataset containing information about exonic SNPs in Plasmodium falciparum
 #' from Manske et al., 2012 \url{http://www.ncbi.nlm.nih.gov/pubmed/22722859}.
 #'
-#' @name global.allele.freq
+#' @name global_pfalciparum_snps
 #' @docType data
 #' @format A data frame with 86158 rows and 11 variables:
 #' \describe{
@@ -28,21 +28,6 @@
 #' @source \url{http://www.malariagen.net/data}
 NULL
 
-#' Minor allele frequencies of 110,000 PNG Plasmodium falciparum SNPs
-#'
-#' A dataset containing SNP frequencies derived from 104 isolates
-#' from Papua New Guinea
-#' @docType data
-#' @name png.allele.frq
-#' @format A data.frame with 107879 rows and 5 columns
-#' \describe{
-#'  \item{chr}{Pf3D7 chromsome name}
-#'  \item{position}{Physical position}
-#'  \item{a.frq}{Reference allele frequency}
-#'  \item{b.frq}{Alternate allele frequency}
-#'  \item{maf}{Minor allele frequency}
-#' }
-NULL
 
 # #--- Stastical functions
 # #' Harmonic Mean
