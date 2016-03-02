@@ -1,18 +1,20 @@
 # seqarray_process_baf_methods.R
 # Methods for estimating and plotting BAF spectra
-#' Compute B-allele frequency spectrum
+
+#' Compute B-allele frequency spectrum genome-wide
 #'
 #' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
-#' @importFrom  SeqArray seqSummary seqApply
-#' @return a numeric matrix of size l by n where l is the number of samples
-#' and n is the number of SNPs. 
+#' @importFrom  SeqArray seqSummary seqApply seqGetData
+#' @details Constructs a bafMatrix object which is a list consisting of 
+#' a matrix of estimated B-allele frequencies and 
+#' @return a bafMatrix object 
 #' @export
-getBAF <- function(gdsfile, split_by_chrom = FALSE) {
+bafMatrix <- function(gdsfile) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     # estimate NRAF matrix, currently on GATK vcf file support
     vars <- seqSummary(gdsfile, check="none", verbose=FALSE)$format$var.name
     if(!("AD" %in% vars)) {
-        stop("Must have annotaion/format/AD tag to compute B-allele frequencies")
+        stop("Must have annotation/format/AD tag to compute B-allele frequencies")
     }
     
     # compute BAF for each sample 
@@ -24,65 +26,43 @@ getBAF <- function(gdsfile, split_by_chrom = FALSE) {
     baf <- matrix(unlist(nrf), ncol = length(nrf),
                   dimnames = list(sample = seqGetData(gdsfile, "sample.id"),
                                   variant = seqGetData(gdsfile, "variant.id")))
-    
-    baf
+    # return class of baf
+    baf_matrix <- structure(list(baf_matrix = baf, 
+                                    coords = getCoordinates(gdsfile)),
+                               class = "bafMatrix")
+    baf_matrix
 }
 
-#' Plot B-allele frequencies by sample
+
+#' Plot bafMatrix object
 #' 
-#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
-#' @param loic NULL optional list containing chromosome name, start postion, end position, and name
-#' @param outdir path to save figures
+#' @param baf a bafMatrix object
+#' @param sample.id character name of sample to plot
+#' @details plots the genome-wide signal of MOI within an isolate
 #' @importFrom scales alpha
 #' @export
-plotBAF <- function(gdsfile, loci = NULL, outdir) {
-    stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
-    stopifnot(dir.exists(outdir))
-    if(is.null(loci)) {
-        baf <- getBAF(gdsfile)
-        # prepare plotting device
-        sample.id <- rownames(baf)
-        breaks <- tapply(1:ncol(baf), 
-                         seqGetData(gdsfile, "chromosome"), median)
-        for(sample in sample.id) {
-            pdf(paste0(outdir, "/", sample, "_BAF_all", ".pdf"))
-            plot(baf[sample, ], xaxt ="n", xlab = "", 
-                 ylim = c(0,1), ylab = "SNV frequency", 
-                 col = scales::alpha("black", 0.5), pch = 16)
-            axis(side = 1, at = breaks, labels = names(breaks), 
-                 las = 3, cex.axis = 0.6)
-            dev.off()
-            
-        }
-    }
-    else {
-        old.filter <- seqGetFilter(gdsfile)
-        seqSetFilterChrom(gdsfile, include = loci$chromosome, is.num = FALSE,
-                          from.bp = loci$start, to.bp = loci$end)
-        baf <- getBAF(gdsfile)
-        sample.id <- rownames(baf)
-        
-        for(sample in sample.id) {
-            pdf(paste0(outdir, "/", sample, "_BAF_", loci$name, ".pdf"))
-            plot(baf[sample, ], xaxt = "n", xlab = "", ylim = c(0,1), 
-                 ylab = "SNV frequency", pch = 16)
-            dev.off()
-        }
-        
-        seqSetFilter(gdsfile, variant.sel = old.filter$variant.sel)
-        
+plot.bafMatrix <- function(baf, sample.id, ...) {
+    if(!(sample.id %in% rownames(baf$baf_matrix))) {
+        stop("sample.id not present in bafMatrix object")
     }
     
+    breaks <- tapply(1:ncol(baf$baf_matrix),
+                     baf$coords$chromosome, median)
+    plot(baf$baf_matrix[sample.id, ], xaxt ="n", xlab = "", 
+         ylim = c(0,1), ylab = "SNV frequency", 
+         col = scales::alpha("black", 0.5), pch = 16, ...)
+    axis(side = 1, at = breaks, labels = names(breaks), 
+         las = 3, cex.axis = 0.6, ...)
 }
 
 
 
-generateWindows <- function(variant.id, positions, window.size) {
+generateWindows <- function(variant.id, positions, window_size) {
     start <- min(positions)
     end <- max(positions)
     data.frame(variant.id = variant.id, 
                position = positions,
-               window =findInterval(positions, seq(start, end, by = window.size)))
+               window =findInterval(positions, seq(start, end, by = window_size)))
 }
 
 averageVar <- function(window, baf_matrix, by.sample) {
@@ -102,29 +82,29 @@ averageVar <- function(window, baf_matrix, by.sample) {
 
 #' Estimate variance in BAF spectra along the genome in non-overlapping windows
 #' 
-#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
-#' @param window.size integer size of window in bp
+#' @param baf_matrix a \code{\link[moimix]{bafMatrix}} object
+#' @param window_size integer size of window in bp
 #' @param by.sample FALSE partition by sample
 #' @details This function computes 
 #' @return data.frame with chromosome, window id, start, midpoint and end of window
 #' and estimates of average variance for window. If by.sample is TRUE, then there
 #' will be additional sample.id column with   
 #' @export 
-getBAFvar <- function(gdsfile, window.size, by.sample = FALSE) {
+getBAFvar <- function(baf_matrix, window_size, by.sample = FALSE) {
     # checks
-    stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
-    stopifnot(is.numeric(window.size) & length(window.size) == 1)
-    stopifnot(is.finite(window.size))
+    stopifnot(inherits(baf_matrix, "bafMatrix"))
+    stopifnot(is.numeric(window_size) & length(window_size) == 1)
+    stopifnot(is.finite(window_size))
     
     # step 1 -  retrieve BAF matrix
-    baf <- getBAF(gdsfile)
+    baf <- baf_matrix$baf_matrix
     
     # step 2 -  contstruct windows by chromosome
-    coord <- getCoordinates(gdsfile)
+    coord <- baf_matrix$coords
     # split by  chromosome
     coord_by_chrom <- split(coord, coord$chromosome)
     intervals <- lapply(coord_by_chrom, 
-                        function(y) generateWindows(y$variant.id, y$position, window.size))
+                        function(y) generateWindows(y$variant.id, y$position, window_size))
     
     # further split list by windows
     intervals_by_window <- lapply(intervals, function(y) split(y, y$window))
