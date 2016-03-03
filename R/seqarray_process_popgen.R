@@ -39,6 +39,7 @@ getMAF <- function(gdsfile) {
 #' for each sample, the reference and and alternate allele frequencies are computed
 #' as the proportion of reads covering each allele. Then heterozygosity at a SNP
 #' is 1 - (raf^2 + aaf^2) 
+#' @importFrom  SeqArray seqSummary seqApply seqGetData
 #' @return a numeric matrix of size l by n where l is the number of samples
 #' and n is the number of SNPs.
 getHeterozygosityBySample <- function(gdsfile) {
@@ -61,7 +62,9 @@ getHeterozygosityBySample <- function(gdsfile) {
     het <- seqApply(gdsfile, "annotation/format/AD", heterozygosity, 
                     margin = "by.variant", as.is = "list")
     
-    het <- matrix(unlist(het), ncol = length(het))
+    het <- matrix(unlist(het), ncol = length(het),
+                  dimnames = list(sample = seqGetData(gdsfile, "sample.id"),
+                                  variant = seqGetData(gdsfile, "variant.id")))
     
     het
 }
