@@ -17,17 +17,35 @@ using namespace Rcpp;
 //' Compute eStep for binomial mixture model
 //' @export
 // [[Rcpp::export]]
-// NumericMatrix eStep(IntegerVector x) {
-//     return x;
-// }
+NumericMatrix eStep(NumericVector x, NumericVector N, NumericVector mu, NumericVector pi) {
+    int k = mu.size();
+    int n = x.size();
+    NumericMatrix tau(n, k);
+    for(int i = 0; i < n; ++i) {
+        for(int j = 0; j < k;  ++j) {
+            tau(i, j) = pi(j) * R::dbinom(x(i), N(i), mu(j), false);
+        }
+    }
+    // scaling factor
+    for(int i = 0; i < n; ++i) {
+        tau(i, _) = tau(i,_)/ sum(tau(i, _));
+    }
+    return tau;
+}
 
 // double Q(NumericVector mu, NumericVector pi) {
 //     return 0.0;
 // }
 
-NumericMatrix mStep(IntegerVector x) {
-    return x;
-}
+// // [[Rcpp::export]]
+// List mStep(NumericVector x, NumericVector N, NumericMatrix tau) {
+//     
+//     int k = tau.size(1);
+//     List out(k);
+//     
+//     
+//      
+// }
 
 
 
@@ -60,9 +78,17 @@ NumericMatrix mStep(IntegerVector x) {
 //
 
 /*** R
+# check mStep, takes in suffucient statistics and outputs parameter estimates
+mu.true <- c(0.3, 0.7)
+pi.true <- c(0.8, 0.2)
+# generate a simple mixture of binomials to test
+mix2 <- sampleMM(1000, 30, 2, mu.true, pi.true)
+mu.init <- c(0.5, 0.5)
+pi.init <- c(0.5, 0.5)
+priors <- eStep(mix2$obs, rep(30, 1000), mu.init, pi.init)
+
 # check eStep
 
-# check mStep
 
 # check moimix
 */
