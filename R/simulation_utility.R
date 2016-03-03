@@ -9,7 +9,7 @@ study1 <- function(n.samples, n.snps, ...) {
     out <- list()
     coverage <- rep(50, n.samples)
     out <- foreach(moi = 2:5, .packages = "moimix") %dopar% {
-        simulate_moi(n.samples, n.snps, moi, coverage, error = 0, ...)
+        simulateMOI(n.samples, n.snps, moi, coverage, error = 0, ...)
     }
     
     return(out)
@@ -23,7 +23,7 @@ study2 <- function(n.samples, n.snps, study1.out, ...) {
     out <- list()
     coverage <- rep(50, n.samples)
     out <- foreach(moi = 2:5, .packages = "moimix") %dopar% {
-        simulate_moi(n.samples, n.snps, moi, coverage, error = 0.01, 
+        simulateMOI(n.samples, n.snps, moi, coverage, error = 0.01, 
                      pi.true = study1.out[[moi-1]][["pi.true"]],
                      mu.true = study1.out[[moi-1]][["mu.true"]],
                      aaf = study1.out[[moi-1]][["aaf"]], ...)
@@ -34,7 +34,7 @@ study2 <- function(n.samples, n.snps, study1.out, ...) {
 study3 <- function(n.samples, n.snps, coverage, study2.out, ...) {
     out <- list()
     out <- foreach(moi = 2:5, .packages = "moimix") %dopar% {
-        simulate_moi(n.samples, n.snps, moi, coverage = coverage, error = 0.01,
+        simulateMOI(n.samples, n.snps, moi, coverage = coverage, error = 0.01,
                      pi.true = study2.out[[moi-1]][["pi.true"]],
                      mu.true = study2.out[[moi-1]][["mu.true"]],
                      aaf = study2.out[[moi-1]][["aaf"]], ...)
@@ -70,7 +70,7 @@ study4 <- function(n.snps = c(1000, 10000, 25000, 50000, 100000), ...) {
     out <- list()
     coverage = rep(50, 20)
     out <- foreach(s = n.snps, .packages = "moimix") %dopar% {
-        simulate_moi(n.samples = 20, n.snps = s, moi = 3, coverage = coverage,
+        simulateMOI(n.samples = 20, n.snps = s, moi = 3, coverage = coverage,
                      error = 0.01, pi.true = pi.true, mu.true = mu.true, ...)
     }
     return(out)   
