@@ -27,3 +27,8 @@
 #' }
 #' @source \url{http://www.malariagen.net/data}
 NULL
+
+#' @useDynLib moimix
+#' @importFrom Rcpp sourceCpp
+NULL
+#> NULL

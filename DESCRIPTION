@@ -14,10 +14,12 @@ Imports:
     MCMCpack,
     foreach,
     SeqArray,
-    SeqVarTools
+    SeqVarTools,
+    Rcpp
 Suggests:
     testthat,
     knitr,
     rmarkdown
 VignetteBuilder: knitr
 RoxygenNote: 5.0.1
+LinkingTo: Rcpp
