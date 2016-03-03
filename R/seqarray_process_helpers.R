@@ -33,13 +33,13 @@ getCoordinates <- function(gdsfile) {
 callMajor <- function(gdsfile, get.nucleotides = FALSE, use.hets = FALSE) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     # estimate BAF matrix
-    baf <- getBAF(gdsfile)
+    baf <- bafMatrix(gdsfile)$baf_matrix
     gt_matrix <- baf
     # if baf is less than 0.5, we'll assign reference allele
     gt_matrix[baf < 0.5] <- 1
     # if baf is greater than 0.5 we'll assign alternate allele
     gt_matrix[baf > 0.5] <- 2
-    # if baf is between then we'll assign randomly
+    # if baf is = 0,5 then we'll assign randomly
     # first need to find bafs == 0.5 and not missing
     index <- baf == 0.5 & !is.na(baf)
     if(use.hets) {
@@ -49,9 +49,11 @@ callMajor <- function(gdsfile, get.nucleotides = FALSE, use.hets = FALSE) {
                                    size = 1, 
                                    prob = 0.5)
     }
-    
-    
-    if (get.nucleotides) {
+
+    if(!get.nucleotides) {
+        return(gt_matrix)
+    } else {
+        
         # generate character vectors containing nucleotides
         ref.alleles <- as.character(ref(gdsfile))
         alt.alleles <- sapply(1:ncol(gt_matrix), 
@@ -67,17 +69,15 @@ callMajor <- function(gdsfile, get.nucleotides = FALSE, use.hets = FALSE) {
         nt_matrix[ref.indices] <- ref.alleles[ref.indices[,2]]
         nt_matrix[alt.indices] <- alt.alleles[alt.indices[,2]]
         nt_matrix[miss.indices] <- "X"
+        
         if (use.hets) {
             het.indices <- which(gt_matrix == 3, arr.ind = TRUE)
             nt_matrix[het.indices] <- "N"
             return(nt_matrix)
+        } else {
+            return(nt_matrix)
         }
-        
-        return(nt_matrix)
     }
-    
-    return(gt_matrix)
-
 }
 
 #' Extract PED files from gds
