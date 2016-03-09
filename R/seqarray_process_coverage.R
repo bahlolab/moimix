@@ -1,8 +1,11 @@
 # seqarray_process_coverage.R
 # Methods for manipulating read counts  from SeqVarGDS objects
+
+#' Process GATK files
+#' @importFrom SeqArray seqGetData
 processGATK <- function(gdsfile, ref.allele) {
     # GATK using the AD tag to store read count data
-    read_counts <- SeqArray::seqGetData(gdsfile, "annotation/format/AD")$data
+    read_counts <-seqGetData(gdsfile, "annotation/format/AD")$data
     # for each variant the AD tag contains the ref and alt counts
     nsnps <- ncol(read_counts)
     ref_index <- seq(1, nsnps, by = 2) # odd index are ref counts
@@ -22,18 +25,20 @@ processGATK <- function(gdsfile, ref.allele) {
     }
 }
 
+#' Process varscan files
+#' @importFrom SeqArray seqGetData
 processVarscan <- function(gdsfile, ref.allele) {
     # varscan is more sensible
     if (ref.allele == 0L) {
-        SeqArray::seqGetData(gdsfile, "annotation/format/RD")$data
+       seqGetData(gdsfile, "annotation/format/RD")$data
     }
     if (ref.allele == 1L) {
-        SeqArray::seqGetData(gdsfile, "annotation/format/AD")$data
+       seqGetData(gdsfile, "annotation/format/AD")$data
     }
     
     if(is.null(ref.allele)) {
-        return(list(ref = SeqArray::seqGetData(gdsfile, "annotation/format/RD")$data,
-                    alt = SeqArray::seqGetData(gdsfile, "annotation/format/AD")$data))
+        return(list(ref =seqGetData(gdsfile, "annotation/format/RD")$data,
+                    alt =seqGetData(gdsfile, "annotation/format/AD")$data))
     }
 }
 
