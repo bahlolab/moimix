@@ -4,6 +4,7 @@
 # output from seqarrays GDS format for use in moimix.
 
 #' Helper function for producing data frame of genomic coordinates
+#' @importFrom SeqArray seqGetData
 #' @export
 getCoordinates <- function(gdsfile) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
@@ -88,7 +89,7 @@ callMajor <- function(gdsfile, get.nucleotides = FALSE, use.hets = FALSE) {
 #' @details This function writes a plink .ped and .map file for a given
 #' gdsfile. If the use.hets option is true the genotypes are used as is, other
 #' wise heterzygotes are set to missing. 
-#' @importFrom SeqVarTools getGenotype
+#' @importFrom SeqArray seqGetData seqApply
 #' @export
 extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
     # construct the ped file requires 6 columns
@@ -146,8 +147,8 @@ extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
 #' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
 #' 
 #' @description Obtain GATK info tags relevant to best practices.
-#' @references \url{http://gatkforums.broadinstitute.org/gatk/discussion/2806/howto-apply-hard-filters-to-a-call-set}
 #' @importFrom SeqArray seqGetData
+#' @references \url{http://gatkforums.broadinstitute.org/gatk/discussion/2806/howto-apply-hard-filters-to-a-call-set}
 #' @export 
 getGATKInfo <- function(gdsfile) {
     
