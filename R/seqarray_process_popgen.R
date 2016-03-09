@@ -9,7 +9,6 @@
 #' reads covering the reference and alternate allele over all samples.   
 #' @note Currently only supports gds files obtained from GATK callers
 #' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
-#' @importFrom SeqArray seqApply seqSummary
 #' @export
 getMAF <- function(gdsfile) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
@@ -39,7 +38,6 @@ getMAF <- function(gdsfile) {
 #' for each sample, the reference and and alternate allele frequencies are computed
 #' as the proportion of reads covering each allele. Then heterozygosity at a SNP
 #' is 1 - (raf^2 + aaf^2) 
-#' @importFrom  SeqArray seqSummary seqApply seqGetData
 #' @return a numeric matrix of size l by n where l is the number of samples
 #' and n is the number of SNPs.
 getHeterozygosityBySample <- function(gdsfile) {
