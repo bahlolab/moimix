@@ -10,7 +10,8 @@
 #' counts in support of SNV, second in support of ref
 #' @param N vector of depth at SNV sites
 #' @param k vector of mixture components to fit
-#' @param niter number of iterations to run 
+#' @param niter number of iterations to run
+#' @export 
 binommix <- function(y, k, niter = 1000, nrep = 10) {
     # I/O error handling
     if(!is(y, "matrix")) stop("y must be a matrix of counts")
@@ -32,6 +33,7 @@ binommix <- function(y, k, niter = 1000, nrep = 10) {
 #' @param k if stepFlexmix choose model with k components
 #' @param criterion if stepFlexmix choose model according to information 
 #' criterion
+#' @export
 getTheta <- function(model, k = NULL, criterion = NULL) {
     # error handling
     if (is(model, "stepFlexmix")) {
