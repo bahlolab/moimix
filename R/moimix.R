@@ -4,5 +4,5 @@
 #' the effect of MOI on SNV data.
 #'
 #' @docType package
-#' @name haldane
+#' @name moimix
 NULL
