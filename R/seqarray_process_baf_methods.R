@@ -38,21 +38,40 @@ bafMatrix <- function(gdsfile) {
 #' 
 #' @param baf a bafMatrix object
 #' @param sample.id character name of sample to plot
+#' @param assignments integer vector of cluster memberships (NULL)
 #' @details plots the genome-wide signal of MOI within an isolate
 #' @importFrom scales alpha
+#' @importFrom RColorBrewer brewer.pal
 #' @export
-plot.bafMatrix <- function(baf, sample.id, ...) {
+plot.bafMatrix <- function(baf, sample.id, assignments = NULL, ...) {
     if(!(sample.id %in% rownames(baf$baf_matrix))) {
         stop("sample.id not present in bafMatrix object")
     }
+    # order coords by chromosome, then position
+    coords_ordered <- baf$coords[order(baf$coords$chromosome, baf$coords$position), ]
+    breaks <- tapply(1:nrow(coords_ordered),
+                     coords_ordered$chromosome, median)
     
-    breaks <- tapply(1:ncol(baf$baf_matrix),
-                     baf$coords$chromosome, median)
-    plot(baf$baf_matrix[sample.id, ], xaxt ="n", xlab = "", 
-         ylim = c(0,1), ylab = "SNV frequency", 
-         col = scales::alpha("black", 0.5), pch = 16, ...)
-    axis(side = 1, at = breaks, labels = names(breaks), 
-         las = 3, cex.axis = 0.6, ...)
+    if(is.null(assignments)) {
+        bf <- baf$baf_matrix[sample.id, ][coords_ordered$variant.id]
+        plot(bf, xaxt ="n", xlab = "", 
+             ylim = c(0,1), ylab = "SNV frequency", 
+             col = alpha("black", 0.5), pch = 16, ...)
+        axis(side = 1, at = breaks, labels = names(breaks), 
+             las = 3, cex.axis = 0.6, ...)
+    } else {
+        bf <- baf$baf_matrix[sample.id, ][coords_ordered$variant.id]
+        # remove missing values 
+        memberships <- assignments[coords_ordered$variant.id]
+        stopifnot(length(bf) == length(assignments))
+        color_clusters <- brewer.pal(length(unique(memberships)), "Paired")
+        plot(bf, xaxt ="n", xlab = "", 
+             ylim = c(0,1), ylab = "SNV frequency", 
+             col = alpha(color_clusters[memberships], 0.5), pch = 16, ...)
+        axis(side = 1, at = breaks, labels = names(breaks), 
+             las = 3, cex.axis = 0.6, ...)
+    }
+    
 }
 
 
