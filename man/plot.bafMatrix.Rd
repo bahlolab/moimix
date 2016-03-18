@@ -4,12 +4,14 @@
 \alias{plot.bafMatrix}
 \title{Plot bafMatrix object}
 \usage{
-plot.bafMatrix(baf, sample.id, ...)
+plot.bafMatrix(baf, sample.id, assignments = NULL, ...)
 }
 \arguments{
 \item{baf}{a bafMatrix object}
 
 \item{sample.id}{character name of sample to plot}
+
+\item{assignments}{integer vector of cluster memberships (NULL)}
 }
 \description{
 Plot bafMatrix object
