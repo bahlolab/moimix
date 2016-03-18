@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>moimix by bahlolab</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>moimix</h1>
+        <h2>R package for estimating multiplicity of infection from high-throughput sequencing data</h2>
+        <a href="https://github.com/bahlolab/moimix" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a id="moimix-an-r-package-for-evaluating-multiplicity-of-infection-in-malaria-parasites" class="anchor" href="#moimix-an-r-package-for-evaluating-multiplicity-of-infection-in-malaria-parasites" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>moimix: an R package for evaluating multiplicity of infection in malaria parasites</h1>
+
+<h2>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features</h2>
+
+<ul>
+<li>Estimate multiplicity of infection from massively parallel sequencing data</li>
+<li>Estimate heterzygosity and within-isolate diversity directly from read-counts</li>
+<li>Call major alleles within isolates from B-allele frequencies</li>
+<li>Prepare SNP barcode data for use in <a href="http://www.broadinstitute.org/infect/malaria/coil/">COIL</a>
+</li>
+<li>Simulate single nucleotide variant data with known multiplicity of infection</li>
+</ul>
+
+<h2>
+<a id="how-do-i-install-moimix" class="anchor" href="#how-do-i-install-moimix" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How do I install moimix?</h2>
+
+<p>There are plans to put <em>moimix</em> on <a href="http://www.bioconductor.org/">Bioconductor</a>
+in the future, however it is currently only available to install as a development
+version from Github:</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c"># install using devtools packages</span>
+<span class="pl-c"># first install bioc dependencies</span>
+source(<span class="pl-s"><span class="pl-pds">"</span>https://bioconductor.org/biocLite.R<span class="pl-pds">"</span></span>)
+biocLite(c(<span class="pl-s"><span class="pl-pds">"</span>graph<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Rgraphviz<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>SeqArray<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>SeqVarTools<span class="pl-pds">"</span></span>))
+<span class="pl-e">devtools</span><span class="pl-k">::</span>install_github(<span class="pl-s"><span class="pl-pds">"</span>bahlolab/moimix<span class="pl-pds">"</span></span>)</pre></div>
+
+<h2>
+<a id="what-data-input-does-moimix-require" class="anchor" href="#what-data-input-does-moimix-require" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What data input does <em>moimix</em> require?</h2>
+
+<p><em>moimix</em> makes use of the Genomic Data Storage (GDS) format used
+by the Bioconductor package <a href="http://www.bioconductor.org/packages/release/bioc/html/SeqArray.html">SeqArray</a>
+to provide fast access to VCF files in R.</p>
+
+<p>To convert a VCF file to the GDS:</p>
+
+<div class="highlight highlight-source-r"><pre>library(<span class="pl-smi">SeqArray</span>)
+seqVCF2GDS(<span class="pl-s"><span class="pl-pds">"</span>isolate_snps.vcf.gz<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>isolate_snps.gds<span class="pl-pds">"</span></span>)</pre></div>
+
+<p>It is also possible to estimate MOI from a matrix of read counts where
+the first column is the number of reads supporting the reference allele and the
+second column is the number of reads supporting the alternate allele.</p>
+
+<h2>
+<a id="how-do-i-use-moimix" class="anchor" href="#how-do-i-use-moimix" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How do I use <em>moimix</em>?</h2>
+
+<p>See the <a href="https://github.com/sa-lee/moimix/blob/master/vignettes/introduction.Rmd">introduction vignette</a> for usage examples.</p>
+
+<h2>
+<a id="how-do-i-cite-moimix" class="anchor" href="#how-do-i-cite-moimix" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How do I cite <em>moimix</em>?</h2>
+
+<p>Manuscript is currently in preparation. If you use moimix please cite the following</p>
+
+<p>Lee S, Harrison A, Tessier N, Tavul L, Miotto O, Siba P, Kwiatkowski D, Müller I, Barry AE and Bahlo M, <em>Assessing clonality in malaria parasites using massively parallel sequencing data</em>, 2016, in preparation.</p>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/bahlolab/moimix/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/bahlolab/moimix/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/bahlolab/moimix"></a> is maintained by <a href="https://github.com/bahlolab">bahlolab</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
