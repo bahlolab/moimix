@@ -1,9 +1,10 @@
 .RData
 ./data
-._haldane.Rproj
 .Rproj.user
 .Rbuildignore
 .Rhistory
 ._*
 .DS_Store
 inst/doc
+vignettes/*.html
+vignettes/*.md

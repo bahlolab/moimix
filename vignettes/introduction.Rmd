@@ -9,7 +9,8 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 ```{r set-options, echo=FALSE, cache=FALSE}
-options(width = 80)
+# options(width = 80)
+knitr::opts_chunk$set(fig.width = 10, fig.height = 8)
 ```
 
 Estimating multiple infections from variant data obtained using massively parallel 
@@ -21,7 +22,7 @@ to this function is a matrix of read counts supporting the reference and alterna
 for all the variants in data. 
 
 In this vignette, we will introduce some key functions in `moimix` and how
-to set up your variant data to estimate some measures of multiplicity of infection. 
+to set up your variant data to estimate some measures of multiplicity of infection.
 
 ## Key functions in `moimix`
 
@@ -42,15 +43,14 @@ extractPED | Create haploid PLINK PED file
 `moimix` assumes that variants have been called either from whole-genome/exome or RNA
 sequencing and the variant calling algorithm used outputs a variant call format (VCF) version 4.1
 file. We also assume that each sample in the VCF file has been annotated with a AD tag
-at the variant sites. Currently, we have tested the functions using output from
-GATK UnifiedGenotyper and HaplotypeCaller algorithms. 
+at the variant sites for both the alternate and reference alleles. Currently, we have tested the functions using output from GATK UnifiedGenotyper and HaplotypeCaller algorithms. 
 
-`moimix` requires that the VCF file is then converted to the Genomic Data Storage (GDS) format. The GDS format provides a fast way of manipulating large VCF files in R. We recommend using the `SeqArray` package 
-for both conversion and manipulating GDS files.
+`moimix` requires that the VCF file is then converted to the Genomic Data Storage (GDS) format. The GDS format provides a fast and convienent way of manipulating large VCF files in R. We make use of the `SeqArray` package 
+for both VCF conversion and manipulating GDS files.
 
 If you are just interested in running the binomix procedure, then you do not need
-to have a GDS file. Simply, for each sample construct a matrix with 2 columns
-correpsonding the read counts for the A and B alleles. Then pass this matrix
+to have a GDS file. For each sample construct a matrix with 2 columns
+correpsonding the read counts for the alternate and referene alleles. Then pass this matrix
 to the `binomix` function.
 
 
@@ -60,7 +60,6 @@ package.
 
 ```{r, eval = FALSE}
 library(SeqArray)
-
 seqVCF2GDS("/path/to/my/file.vcf.gz", "/path/to/my/file.gds")
 
 ```
@@ -68,47 +67,116 @@ seqVCF2GDS("/path/to/my/file.vcf.gz", "/path/to/my/file.gds")
 To read the GDS file into R, use the `seqOpen` function and to check that its
 output matches the orginal VCF file use seqSummary.
 ```{r, eval = FALSE}
-library(SeqArray)
 my_vcf <-seqOpen("/path/to/my/file.gds")
 seqSummary(my_vcf)
 ```
 
+# Case study: _Plasmodium falciparum_ isolates from The Gambia. 
 
-### Estimating the BAF matrix
-```{r, eval = FALSE}
+Here we present an example analysis from data obtained from the [Malaria Genomics
+Consoritum](https://www.malariagen.net/projects/parasite/pf) community project.
+The data consists of 65 _Plasmodium falciparum_ isolates from The Gambia with 
+approximately 78,000 high-quality biallelic SNVs on 14 nuclear chromosomes and the
+apicoplast. 
+
+For details on how the data was processed please see the README file located at
+ftp://ngs.sanger.ac.uk/production/pf3k/release_4/
+
+First, we use `SeqArray` to load our GDS file and look at it.
+```{r read-file}
+library(SeqArray)
+gds_file <- system.file("extdata", "gambian_isolates.gds", package = "moimix")
+isolates <- seqOpen(gds_file)
+seqSummary(isolates)
+# save sample identifiers
+sample.id <- seqGetData(isolates, "sample.id")
+
+```
+
+We also filter the variants located on the apicoplast before any downstream
+analysis.
+
+```{r filter-apicoplast}
 library(moimix)
-baf_matrix <- getBAF(my_vcf)
+# get genomic coordinates of all variants
+coords <- getCoordinates(isolates)
+head(coords)
+# filter variant.ids not on apicoplast
+seqSetFilter(isolates, 
+             variant.id = coords$variant.id[coords$chromosome != "Pf3D7_API_v3"])
 ```
 
-### Plotting BAF signals
-```{r, eval = FALSE}
-plotBAF(my_vcf, outdir = "/path/to/figures/")
+## Estimating the BAF matrix
+
+The first step in our clonality analysis is to estiamte the B-allele frequencies
+for each isolate directly from the sequencing depth. 
+We construct a `bafMatrix` object which stores the estimates of the B-allele 
+frequencies in a matrix over the entire cohort and the genomic coordinates
+of the variants.
+
+```{r estimate-baf}
+isolate_baf <- bafMatrix(isolates)
+class(isolate_baf)
+str(isolate_baf)
 ```
 
-### Estimating $F_{ws}$ 
-```{r, eval = FALSE}
-getFws(my_vcf)
+You can plot the genome-wide B-allele frequencies by passing the `bafMatrix` object
+and a sample identifer to `plot`.
+
+Here's an example for an isolate that is from a single-clone infection.
+```{r plot-baf-moi1}
+plot(isolate_baf, "PA0022-C")
 ```
 
-### Estimating MOI with `binommix`
+And an example of multiple-clone infection.
+```{r plot-baf-moi2}
+plot(isolate_baf,  "PA0021-C")
+```
 
-```{r, eval = FALSE}
+## Estimating MOI with `binommix`
+
+To estimate MOI we use the `binomix` function. MOI is estimated on a per-isolate
+basis using a binomial mixture model implemented in the R package `flexmix`. 
+In order to fit a model for an isolate, we need a matrix of read counts and to
+set the value of $k=2c$ where $c$ is the number clonal infections.
+
+We fit a mixture model with 4 bands on sample "PA0021-C" and report the results.
+
+```{r fit-model, warning=FALSE}
+set.seed(2002)
 # first generate matrix of read counts for ref and alt alleles
-counts <- alleleCounts(my_vcf)
+counts <- alleleCounts(isolates)
 
-# to fit a model on the first sample
-y <- cbind(counts$ref[1,], counts$alt[2,])
+# fit a model on sample PA0021-C, multiple clone infection
+i <- which(sample.id == "PA0021-C")
+y <- cbind(counts$ref[i,], counts$alt[i,])
+# which zeros
+zeros <- y[,1]==0 | y[,2] == 0
+m1 <- binommix(y[!zeros, ], k = 2)
+# to inspect the model and view parameter estimates
+summary(m1)
 
-m1 <- binommix(y, k = 2)
-# to get parameter estimates use getTheta
-getTheta(m1)
+param.estimates <- getTheta(m1)
+param.estimates
+plot(isolate_baf, "PA0021-C")
+abline(h = param.estimates$mu.hat)
 
 ```
 
-## Session Info
+## Estimating MOI with $F_{ws}$ 
+An alternative way of assessing clonality is to estimte the $F_{ws}$ statistic.
+An $F_{ws} < 0.95$ is indicative of a clonal infection.
+```{r fws}
+fws_all <- getFws(isolates)
+boxplot(fws_all)
+# see if our sample that we estimated is multiclonal according to fws
+fws_all[i] < 0.95
+```
+
+# Session Info
 ```{r}
 sessionInfo()
 ```
-## References
+# References
 1. flexmix package - https://cran.r-project.org/web/packages/flexmix/index.html
 2. SeqArray package - http://bioconductor.org/packages/release/bioc/html/SeqArray.html
