@@ -6,18 +6,20 @@
 #' Fit binomial mixture model on coverage data
 #' 
 #' @importFrom flexmix initFlexmix FLXMRglm
-#' @param y matrix with 2 columns, first column contains 
-#' counts in support of SNV, second in support of ref
-#' @param N vector of depth at SNV sites
+#' @param counts_matrix an \code{\link{alleleCounts}} object with ref and alt slots filled
+#' @param sample.id character sample.id to fit model on.
 #' @param k vector of mixture components to fit
 #' @param niter number of iterations to run
+#' @param nrep number of repetitions to run
 #' @export 
-binommix <- function(y, k, niter = 1000, nrep = 10) {
+binommix <- function(counts_matrix, sample.id, k, niter = 1000, nrep = 10) {
     # I/O error handling
-    if(!is(y, "matrix")) stop("y must be a matrix of counts")
-    if(dim(y)[2] != 2) stop("y must have two columns")
-    if (any(k < 1 | k > 5)) stop("Number of mixture components must be between 1 and 5")
+    if (!inherits(counts_matrix, "alleleCounts") && length(counts_matrix) != 2) stop("Invalid alleleCounts object")
+    stopifnot(is.character(sample.id) && length(sample.id) == 1)
+    if (any(k < 1 | k > 5 ) ) stop("Number of mixture components must be between 1 and 5")
     
+    # data set up
+    y <- cbind(counts_matrix$alt[sample.id, ], counts_matrix$ref[sample.id, ])
     flexmix::initFlexmix(y ~ 1, 
                          k = k, 
                          model = flexmix::FLXMRglm(y ~ ., family = "binomial"),
