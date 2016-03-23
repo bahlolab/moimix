@@ -4,17 +4,18 @@
 \alias{binommix}
 \title{Fit binomial mixture model on coverage data}
 \usage{
-binommix(y, k, niter = 1000, nrep = 10)
+binommix(counts_matrix, sample.id, k, niter = 1000, nrep = 10)
 }
 \arguments{
-\item{y}{matrix with 2 columns, first column contains 
-counts in support of SNV, second in support of ref}
+\item{counts_matrix}{an \code{\link{alleleCounts}} object with ref and alt slots filled}
+
+\item{sample.id}{character sample.id to fit model on.}
 
 \item{k}{vector of mixture components to fit}
 
 \item{niter}{number of iterations to run}
 
-\item{N}{vector of depth at SNV sites}
+\item{nrep}{number of repetitions to run}
 }
 \description{
 Fit binomial mixture model on coverage data

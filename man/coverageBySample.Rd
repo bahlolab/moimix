@@ -7,7 +7,7 @@
 coverageBySample(coverage_list, threshold)
 }
 \arguments{
-\item{coverage_list}{output from \code{\link{alleleCounts}}}
+\item{coverage_list}{an \code{\link{alleleCounts}} object}
 
 \item{threshold}{coverage threshold}
 }

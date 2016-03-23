@@ -1,4 +1,5 @@
 # moimix: an R package for evaluating multiplicity of infection in malaria parasites
+http://bahlolab.github.io/moimix/
 
 ## Features
 
@@ -39,13 +40,20 @@ the first column is the number of reads supporting the reference allele and the
 second column is the number of reads supporting the alternate allele.
 
 ## How do I use _moimix_?
-See the [introduction vignette](https://github.com/sa-lee/moimix/blob/master/vignettes/introduction.Rmd) for usage examples.
+See the [introduction vignette](http://bahlolab.github.io/moimix/vignettes/introduction.html) for usage examples.
 
 ## How do I cite _moimix_?
 Manuscript is currently in preparation. If you use moimix please cite the following
+with the github.io URL. 
 
-Lee S, Harrison A, Tessier N, Tavul L, Miotto O, Siba P, Kwiatkowski D, Müller I, Barry AE and Bahlo M, _Assessing clonality in malaria parasites using massively parallel sequencing data_, 2016, in preparation.
-
+```{latex} 
+@article{Lee2016,
+	Author = {Lee, Stuart A and Harrison, Abby G and Tessier, Natacha and Tavul, Livingstone and Miotto, Olivo and Siba, Peter M and Mueller, Ivo and Barry, Alyssa E and Bahlo, Melanie},
+	Journal = {in preparation},
+	Title = {Assessing clonality in malaria parasites using massively parallel sequencing data},
+	Url = {http://bahlolab.github.io/moimix/},
+	Year = {2016}}
+```
 
 
 

@@ -4,12 +4,13 @@
 \alias{alleleCounts}
 \title{Return allele counts from a genofile based on read counts}
 \usage{
-alleleCounts(gdsfile, ref.allele = NULL)
+alleleCounts(gdsfile)
 }
 \arguments{
 \item{gdsfile}{a \code{\link[SeqArray]{SeqVarGDSClass}} object}
-
-\item{ref.allele}{\code{NULL} a single numeric value.}
+}
+\value{
+an alleleCounts matrix object, which is a list containg the
 }
 \description{
 Return allele counts from a genofile based on read counts
@@ -19,7 +20,7 @@ If \code{ref.allele = NULL}, the function returns a list
 of matrices corresponding to the read counts of the reference and alternate
 alleles respectively, while if \code{ref.allele = 0L} or \code{ref.allele = 1L}
 the function returns a  matrix corresponding the reference or alternate
-read counts. Currently, the variant formats from varscan and GATK
+read counts. Currently, the AD tag formats from varscan and GATK
 are supported.
 }
 
