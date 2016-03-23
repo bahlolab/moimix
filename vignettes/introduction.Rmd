@@ -2,15 +2,14 @@
 title: "Introduction to moimix package"
 author: "Stuart Lee"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: BiocStyle::html_document
 vignette: >
   %\VignetteIndexEntry{introduction}
-  %\VignetteEngine{rmarkdown::render}
+  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 ```{r set-options, echo=FALSE, cache=FALSE}
-# options(width = 80)
-knitr::opts_chunk$set(fig.width = 10, fig.height = 8)
+# no options set yet
 ```
 
 Estimating multiple infections from variant data obtained using massively parallel 
@@ -148,16 +147,13 @@ set.seed(2002)
 counts <- alleleCounts(isolates)
 
 # fit a model on sample PA0021-C, multiple clone infection
-i <- which(sample.id == "PA0021-C")
-y <- cbind(counts$ref[i,], counts$alt[i,])
-# which zeros
-zeros <- y[,1]==0 | y[,2] == 0
-m1 <- binommix(y[!zeros, ], k = 2)
+m1 <- binommix(counts, sample.id = "PA0021-C", k = 2)
 # to inspect the model and view parameter estimates
 summary(m1)
-
 param.estimates <- getTheta(m1)
 param.estimates
+
+# visualise model output
 plot(isolate_baf, "PA0021-C")
 abline(h = param.estimates$mu.hat)
 
@@ -168,9 +164,10 @@ An alternative way of assessing clonality is to estimte the $F_{ws}$ statistic.
 An $F_{ws} < 0.95$ is indicative of a clonal infection.
 ```{r fws}
 fws_all <- getFws(isolates)
-boxplot(fws_all)
+
+hist(fws_all)
 # see if our sample that we estimated is multiclonal according to fws
-fws_all[i] < 0.95
+fws_all["PA0021-C"] < 0.95
 ```
 
 # Session Info
