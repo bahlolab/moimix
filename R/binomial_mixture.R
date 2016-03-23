@@ -20,9 +20,13 @@ binommix <- function(counts_matrix, sample.id, k, niter = 1000, nrep = 10) {
     
     # data set up
     y <- cbind(counts_matrix$alt[sample.id, ], counts_matrix$ref[sample.id, ])
-    flexmix::initFlexmix(y ~ 1, 
+    # filter SNPs that are uninformative for MOI
+    filter_zeros <- y[,1]==0 | y[,2] == 0
+    y_obs <- y[!filter_zeros, ]
+    # remove exact zero counts
+    flexmix::initFlexmix(y_obs ~ 1, 
                          k = k, 
-                         model = flexmix::FLXMRglm(y ~ ., family = "binomial"),
+                         model = flexmix::FLXMRglm(y_obs ~ ., family = "binomial"),
                          control = list(iter.max = niter,
                                         minprior = 0),
                          nrep = 10)
