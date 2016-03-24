@@ -32,6 +32,17 @@ binommix <- function(counts_matrix, sample.id, k, niter = 1000, nrep = 10) {
                          nrep = 10)
 }
 
+#' Fit binomial mixture  model in non-overlapping genomic windows
+#' 
+#' @param counts_matrix an \code{\link{alleleCounts}} object with ref and alt slots filled
+#' @param sample.id character sample.id to fit model on.
+#' @param window_list list of genomic windows
+#' @return modelWindow object 
+#' @importFrom flexmix initFlexmix FLXMRglm
+binomMixSlide <- function(counts_matrix, sample.id, window_size) {
+    return(NULL)
+}
+
 #' Return estimated model parameters
 #' 
 #' @importFrom flexmix getModel parameters prior

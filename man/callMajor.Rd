@@ -24,6 +24,6 @@ read counts directly. In the case of RAF = 0.5 we select the
 major allele randomly from Bernoulli distribution if use.hets is FALSE. Other
 wise hets are coded as 3. If get.nucleotides is TRUE a character matrix is
 retruned with the alleles coded, otherwise if use.hets the allele is coded as
-N.
+N. Missing genotype calls are coded as X.
 }
 

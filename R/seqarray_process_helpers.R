@@ -27,7 +27,7 @@ getCoordinates <- function(gdsfile) {
 #' major allele randomly from Bernoulli distribution if use.hets is FALSE. Other
 #' wise hets are coded as 3. If get.nucleotides is TRUE a character matrix is
 #' retruned with the alleles coded, otherwise if use.hets the allele is coded as
-#' N. 
+#' N. Missing genotype calls are coded as X. 
 #' @return a binary matrix  or character matrix containing reference and alternate alleles
 #' @importFrom SeqArray ref alt
 #' @export
@@ -40,10 +40,10 @@ callMajor <- function(gdsfile, get.nucleotides = FALSE, use.hets = FALSE) {
     gt_matrix[baf < 0.5] <- 1
     # if baf is greater than 0.5 we'll assign alternate allele
     gt_matrix[baf > 0.5] <- 2
-    # if baf is = 0,5 then we'll assign randomly
+    # if baf is = 0.5 then we'll assign randomly
     # first need to find bafs == 0.5 and not missing
     index <- baf == 0.5 & !is.na(baf)
-    if(use.hets) {
+    if (use.hets) {
         gt_matrix[index] <- 3
     } else {
         gt_matrix[index] <- rbinom(n = length(gt_matrix[index]), 
@@ -51,7 +51,7 @@ callMajor <- function(gdsfile, get.nucleotides = FALSE, use.hets = FALSE) {
                                    prob = 0.5)
     }
 
-    if(!get.nucleotides) {
+    if (!get.nucleotides) {
         return(gt_matrix)
     } else {
         
@@ -147,6 +147,16 @@ extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
 #' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
 #' 
 #' @description Obtain GATK info tags relevant to best practices.
+#' @return a data.frame with the following columns:
+#'  chromosome
+#'  position
+#'  variant.id
+#'  qd - (average quality by depth)
+#'  mq - RMS mapping quality
+#'  fs - Fisher strand bias
+#'  mqrank - MQ rank
+#'  haplotypescore
+#'  readposranksum
 #' @importFrom SeqArray seqGetData
 #' @references \url{http://gatkforums.broadinstitute.org/gatk/discussion/2806/howto-apply-hard-filters-to-a-call-set}
 #' @export 

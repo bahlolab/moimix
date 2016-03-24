@@ -9,6 +9,18 @@ getGATKInfo(gdsfile)
 \arguments{
 \item{gdsfile}{a \code{\link[SeqArray]{SeqVarGDSClass}} object}
 }
+\value{
+a data.frame with the following columns:
+ chromosome
+ position
+ variant.id
+ qd - (average quality by depth)
+ mq - RMS mapping quality
+ fs - Fisher strand bias
+ mqrank - MQ rank
+ haplotypescore
+ readposranksum
+}
 \description{
 Obtain GATK info tags relevant to best practices.
 }

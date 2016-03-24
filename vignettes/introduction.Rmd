@@ -171,7 +171,7 @@ fws_all["PA0021-C"] < 0.95
 ```
 
 # Session Info
-```{r}
+```{r session-info}
 sessionInfo()
 ```
 # References
