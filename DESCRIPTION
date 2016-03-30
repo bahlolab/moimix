@@ -1,8 +1,8 @@
 Package: moimix
 Title: moimix: Estimating mulitplicity of infection from high-throughput sequencing data
-Version: 0.0.0.0
+Version: 0.0.0.9000
 Authors@R: "Stuart Lee <lee.s@wehi.edu.au> [aut, cre]"
-Description: R package to evaluate multiplicity of infection (MOI) of organims using 
+Description: R package to evaluate multiplicity of infection (MOI) of organisms using 
     binomial mixture models and other population genetics methods. moimix can be used to simulate 
     single nucleotide variant (SNV) data from samples with known MOI. 
 Depends:
@@ -23,3 +23,5 @@ Suggests:
 VignetteBuilder: knitr
 RoxygenNote: 5.0.1
 LinkingTo: Rcpp
+URL: https://github.com/bahlolab/moimix
+BugReports: https://github.com/bahlolab/moimix/issues

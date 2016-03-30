@@ -39,8 +39,24 @@ binommix <- function(counts_matrix, sample.id, k, niter = 1000, nrep = 10) {
 #' @param window_list list of genomic windows
 #' @return modelWindow object 
 #' @importFrom flexmix initFlexmix FLXMRglm
-binomMixSlide <- function(counts_matrix, sample.id, window_size) {
-    return(NULL)
+#' @importFrom foreach foreach
+#' @importFrom iterators iter
+binomMixSlide <- function(counts_matrix, sample.id, window_list) {
+    
+    y <- cbind(counts_matrix$alt[sample.id, ], 
+               counts_matrix$ref[sample.id, ])
+    foreach(chr=iter(names(window_list))) %:% 
+        foreach(window=unique(window_list[[chr]]$window), .packages = "flexmix") %do% {
+            window_y <- y[window_list[[chr]]$variant.id[window_list[[chr]]$window == window], ]
+            filter_zeros <- window_y[,1]==0 | window_y[,2] == 0
+            y_obs <- y[!filter_zeros, ]
+            flexmix::initFlexmix(y_obs ~ 1, 
+                                 k = 2, 
+                                 model = flexmix::FLXMRglm(y_obs ~ ., family = "binomial"),
+                                 control = list(iter.max = 500,
+                                                minprior = 0))
+        }
+
 }
 
 #' Return estimated model parameters

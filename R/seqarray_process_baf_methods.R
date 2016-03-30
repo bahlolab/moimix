@@ -88,11 +88,13 @@ generateWindows <- function(gdsfile, window_size) {
     windows_by_chrom <- lapply(coord_by_chrom, function(z) {
         start <- min(z$position)
         end <-  max(z$position)
-        data.frame(variant.id = z$variant.id, 
+        out_df <- data.frame(variant.id = z$variant.id, 
                    position = z$position,
                    window = findInterval(z$position, seq(start, end, 
                                                         by = window_size)))
+        out_df
     })
+    windows_by_chrom
 
 }
 

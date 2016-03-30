@@ -9,7 +9,7 @@ http://bahlolab.github.io/moimix/
 * Prepare SNP barcode data for use in [COIL](http://www.broadinstitute.org/infect/malaria/coil/)
 * Simulate single nucleotide variant data with known multiplicity of infection
 
-## How do I install moimix?
+## How do I install _moimix_?
 
 There are plans to put _moimix_ on [Bioconductor](http://www.bioconductor.org/)
 in the future, however it is currently only available to install as a development
@@ -43,7 +43,7 @@ second column is the number of reads supporting the alternate allele.
 See the [introduction vignette](http://bahlolab.github.io/moimix/vignettes/introduction.html) for usage examples.
 
 ## How do I cite _moimix_?
-Manuscript is currently in preparation. If you use moimix please cite the following
+Manuscript is currently in preparation. If you use _moimix_ please cite the following
 with the github.io URL. 
 
 ```{latex} 
