@@ -4,14 +4,14 @@
 \alias{binomMixSlide}
 \title{Fit binomial mixture  model in non-overlapping genomic windows}
 \usage{
-binomMixSlide(counts_matrix, sample.id, window_size)
+binomMixSlide(counts_matrix, sample.id, window_list)
 }
 \arguments{
 \item{counts_matrix}{an \code{\link{alleleCounts}} object with ref and alt slots filled}
 
 \item{sample.id}{character sample.id to fit model on.}
 
-\item{window_size}{integer size of base-pair to windows}
+\item{window_list}{list of genomic windows}
 }
 \value{
 modelWindow object
