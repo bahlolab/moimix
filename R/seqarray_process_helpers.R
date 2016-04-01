@@ -88,7 +88,8 @@ callMajor <- function(gdsfile, get.nucleotides = FALSE, use.hets = FALSE) {
 #' @param out.file prefix of PLINK files for output
 #' @details This function writes a plink .ped and .map file for a given
 #' gdsfile. If the use.hets option is true the genotypes are used as is, other
-#' wise heterzygotes are set to missing. 
+#' wise heterzygotes are set to missing. This function is slow if there
+#' are a large number of variants in the GDS file. 
 #' @importFrom SeqArray seqGetData seqApply
 #' @export
 extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
@@ -102,7 +103,11 @@ extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
     # extract samples
     # if use.hets we will code hets as missing
     # recode matrix 
-    genotypeRecode <- function(gt, use.hets) {
+    genotypeRecode <- function(gt, hets) {
+        if (nrow(gt) != 2) {
+            stop("Non-biallelic variant, 
+                 please filter before extracting PED file.")
+        }
         sites <- t(gt)
         if (use.hets) {
             return(sites)
@@ -114,7 +119,7 @@ extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
     }
     # create genotype list
     gt_list <- seqApply(gdsfile, "genotype", 
-                        FUN = genotypeRecode, use.hets = use.hets, 
+                        FUN = genotypeRecode, hets = use.hets, 
                         margin = "by.variant", as.is = 'list')
     
     gt_matrix <- do.call(cbind, gt_list)
