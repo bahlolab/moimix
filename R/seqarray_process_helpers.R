@@ -105,7 +105,7 @@ extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
     # recode matrix 
     genotypeRecode <- function(gt, hets) {
         if (nrow(gt) != 2) {
-            stop("Non-biallelic variant, 
+            stop("Non-biallelic variant with non-diploid genotype, 
                  please filter before extracting PED file.")
         }
         sites <- t(gt)
