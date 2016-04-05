@@ -7,7 +7,7 @@ Description: R package to evaluate multiplicity of infection (MOI) of organisms 
     single nucleotide variant (SNV) data from samples with known MOI. 
 Depends:
     flexmix
-License: MIT + file LICENSE
+License: GPL-3 file LICENSE
 LazyData: true
 Imports:
     MCMCpack,
