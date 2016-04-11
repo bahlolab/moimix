@@ -4,7 +4,7 @@
 \alias{binomMixSlide}
 \title{Fit binomial mixture  model in non-overlapping genomic windows}
 \usage{
-binomMixSlide(counts_matrix, sample.id, window_list)
+binomMixSlide(counts_matrix, sample.id, window_list, bpparam)
 }
 \arguments{
 \item{counts_matrix}{an \code{\link{alleleCounts}} object with ref and alt slots filled}
@@ -12,6 +12,8 @@ binomMixSlide(counts_matrix, sample.id, window_list)
 \item{sample.id}{character sample.id to fit model on.}
 
 \item{window_list}{list of genomic windows}
+
+\item{bparam}{options to be passed to \code{\link[BiocParallel]{bpapply}}}
 }
 \value{
 modelWindow object

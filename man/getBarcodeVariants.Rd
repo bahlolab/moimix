@@ -7,6 +7,11 @@ barcodes.}
 \usage{
 getBarcodeVariants(gdsfile, publication = "Volkman2008")
 }
+\arguments{
+\item{gdsfile}{a \code{\link{SeqVarGDS}} object}
+
+\item{publication}{a character string representing a publication}
+}
 \description{
 Helper functions for extracting variant IDs corresponding to previously published
 barcodes.

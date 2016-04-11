@@ -42,8 +42,3 @@ NULL
 #' @format A \code{\link[SeqArray]{SeqVarGDSClass}} object.
 #' @source \url{ftp://ngs.sanger.ac.uk/production/pf3k/release_4/}
 NULL
-
-#' @useDynLib moimix
-#' @importFrom Rcpp sourceCpp
-NULL
-#> NULL

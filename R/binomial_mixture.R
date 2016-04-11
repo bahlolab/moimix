@@ -37,14 +37,17 @@ binommix <- function(counts_matrix, sample.id, k, niter = 1000, nrep = 10) {
 #' @param counts_matrix an \code{\link{alleleCounts}} object with ref and alt slots filled
 #' @param sample.id character sample.id to fit model on.
 #' @param window_list list of genomic windows
+#' @param bparam options to be passed to \code{\link[BiocParallel]{bpapply}}
 #' @return modelWindow object 
 #' @importFrom flexmix initFlexmix FLXMRglm
 #' @importFrom foreach foreach
 #' @importFrom iterators iter
-binomMixSlide <- function(counts_matrix, sample.id, window_list) {
-    
+binomMixSlide <- function(counts_matrix, sample.id, window_list, bpparam) {
+    # need to re-edit to use BioCParallel
     y <- cbind(counts_matrix$alt[sample.id, ], 
                counts_matrix$ref[sample.id, ])
+    
+    
     foreach(chr=iter(names(window_list))) %:% 
         foreach(window=unique(window_list[[chr]]$window), .packages = "flexmix") %do% {
             window_y <- y[window_list[[chr]]$variant.id[window_list[[chr]]$window == window], ]

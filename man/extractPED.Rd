@@ -19,6 +19,7 @@ Extract PED files from gds
 \details{
 This function writes a plink .ped and .map file for a given
 gdsfile. If the use.hets option is true the genotypes are used as is, other
-wise heterzygotes are set to missing.
+wise heterzygotes are set to missing. This function is slow if there
+are a large number of variants in the GDS file.
 }
 
