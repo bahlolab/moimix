@@ -14,6 +14,34 @@ getCoordinates <- function(gdsfile) {
                stringsAsFactors = FALSE)
 }
 
+perSiteCoverage <- function(gdsfile) {
+    stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
+    # estimate NRAF matrix, currently on GATK vcf file support
+    vars <- seqSummary(gdsfile, check="none", verbose=FALSE)$format$var.name
+    if(!("AD" %in% vars)) {
+        stop("Must have annotation/format/AD tag to compute B-allele frequencies")
+    }
+    
+    seqApply(gdsfile, "annotation/format/AD", 
+             function(x) sum(x, na.rm = TRUE), 
+             margin = "by.variant", 
+             as.is = "integer")
+}
+
+perSiteAlleleCoverage <- function(gdsfile) {
+    stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
+    # estimate NRAF matrix, currently on GATK vcf file support
+    vars <- seqSummary(gdsfile, check="none", verbose=FALSE)$format$var.name
+    if(!("AD" %in% vars)) {
+        stop("Must have annotation/format/AD tag to compute B-allele frequencies")
+    }
+    
+    matrix(seqApply(gdsfile, "annotation/format/AD", 
+             function(x) colSums(x, na.rm = TRUE), 
+             margin = "by.variant", 
+             as.is = "list"), ncol = 2, byrow = TRUE)
+    
+}
 #' Get major allele calls for isolates from BAF matrix
 #' 
 #' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object

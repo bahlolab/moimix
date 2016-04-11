@@ -26,9 +26,17 @@ bafMatrix <- function(gdsfile) {
     baf <- matrix(unlist(nrf), ncol = length(nrf),
                   dimnames = list(sample = seqGetData(gdsfile, "sample.id"),
                                   variant = seqGetData(gdsfile, "variant.id")))
+    
+    # compute per variant B-allele frequencies
+    total_depth <- perSiteCoverage(gdsfile)
+    b_depth <- seqApply(gdsfile, "annotation/format/AD",
+                        function(x) colSums(x)[2],
+                        margin = "by.variant",
+                        as.is = "integer")
     # return class of baf
-    baf_matrix <- structure(list(baf_matrix = baf, 
-                                    coords = getCoordinates(gdsfile)),
+    baf_matrix <- structure(list(baf_matrix = baf,
+                                 baf_site = b_depth / total_depth,
+                                coords = getCoordinates(gdsfile)),
                                class = "bafMatrix")
     baf_matrix
 }
