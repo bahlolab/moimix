@@ -1,9 +1,34 @@
 # Title: coil_functions.R
 # Author: Stuart Lee
 # Description: Helper functions for extracting barcodes
-# for use in COIL - see 
+# for use in COI and estMOI L - see 
 # http://www.broadinstitute.org/infect/malaria/coil/
 
+#' Parse estMOI log files in a directory into tidy data frame
+#' 
+#' @param path path containing .txt files containing estMOI estimates
+#' @note Assumes that outPrefix set as option in estMOI is set to sample identifer.
+#' @return a data.frame
+#' @export
+readEstMOI <- function(path) {
+    # regex to get outPrefix
+    estmoi_pattern<-  "(.*\\/)(.*)(.moi.*.txt)"
+    estmoi_files <- list.files(path, pattern = ".txt$", full.names = TRUE)
+    
+    readerMOI <- function(file) {
+        out_df <- read.table(file, header = FALSE, sep = "\t",
+                             comment.char = "", skip = 1, fill = TRUE,
+                             na.strings = c("", NA))
+        colnames(out_df) <- c("K", "count", "proportion", "estimate")
+        out_df$sample.id <- gsub(estmoi_pattern, "\\2", file) 
+        out_df
+        
+    }
+    estmoi_data <- do.call(rbind,  lapply(estmoi_files, readerMOI))
+    estmoi_data
+    
+}
+ 
 #' Extract barcode for use in COIL program
 #' 
 #' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
