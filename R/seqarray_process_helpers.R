@@ -4,6 +4,7 @@
 # output from seqarrays GDS format for use in moimix.
 
 #' Helper function for producing data frame of genomic coordinates
+#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
 #' @importFrom SeqArray seqGetData
 #' @export
 getCoordinates <- function(gdsfile) {
@@ -14,6 +15,28 @@ getCoordinates <- function(gdsfile) {
                stringsAsFactors = FALSE)
 }
 
+#' Helper function for producing matrix of allele dosages
+#' 
+#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
+#' @importFrom SeqArray seqGetData
+#' @export
+getDosage <- function(gdsfile) {
+    stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
+    gt_array <- seqGetData(gdsfile, "genotype")
+    sample.id <- seqGetData(gdsfile, "sample.id")
+    variant.id <- seqGetData(gdsfile, "variant.id")
+    dosage <-  matrix(gt_array[1,,] + gt_array[2,,],
+                      nrow = length(sample.id), 
+                      ncol = length(variant.id),
+                      dimnames = list(sample = sample.id,
+                                      variant = variant.id))
+    dosage
+}
+
+#' Compute per variant depth accross all samples.
+#'
+#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
+#' @return an integer vector
 perSiteCoverage <- function(gdsfile) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     # estimate NRAF matrix, currently on GATK vcf file support
@@ -28,6 +51,11 @@ perSiteCoverage <- function(gdsfile) {
              as.is = "integer")
 }
 
+#' Compute per site per sample coverage
+#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
+#' @return a matrix of allele counts
+#' @importFrom SeqArray seqSummary seqApply seqGetData
+#' @export
 perSiteAlleleCoverage <- function(gdsfile) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     # estimate NRAF matrix, currently on GATK vcf file support
