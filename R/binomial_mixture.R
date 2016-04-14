@@ -2,28 +2,30 @@
 # Author: Stuart Lee
 # Date: 07/04/2015
 
-
 #' Fit binomial mixture model on coverage data
 #' 
 #' @importFrom flexmix initFlexmix FLXMRglm
 #' @param counts_matrix an \code{\link{alleleCounts}} object with ref and alt slots filled
 #' @param sample.id character sample.id to fit model on.
 #' @param k vector of mixture components to fit
+#' @param coverage_threshold exclude sites with total coverage < coverage_threshold
 #' @param niter number of iterations to run
 #' @param nrep number of repetitions to run
 #' @export 
-binommix <- function(counts_matrix, sample.id, k, niter = 1000, nrep = 10) {
+binommix <- function(counts_matrix, sample.id, k, coverage_threshold = 0L, niter = 1000, nrep = 10) {
     # I/O error handling
-    if (!inherits(counts_matrix, "alleleCounts") && length(counts_matrix) != 2) stop("Invalid alleleCounts object")
+    if (!inherits(counts_matrix, "alleleCounts") && length(counts_matrix) != 3) stop("Invalid alleleCounts object")
     stopifnot(is.character(sample.id) && length(sample.id) == 1)
-    if (any(k < 1 | k > 5 ) ) stop("Number of mixture components must be between 1 and 5")
+    stopifnot(is.integer(coverage_threshold) && coverage_threshold >= 0L)
+    if (any(k < 1L | k > 5L ) ) stop("Number of mixture components must be between 1 and 5")
     
     # data set up
-    y <- cbind(counts_matrix$alt[sample.id, ], counts_matrix$ref[sample.id, ])
-    # filter SNPs that are uninformative for MOI
-    filter_zeros <- y[,1]==0 | y[,2] == 0
+    y <- cbind(counts_matrix$alt[sample.id, ], 
+               counts_matrix$ref[sample.id,])
+    # filter SNPs that are uninformative for MOI, low coverage
+    filter_zeros <- rowSums(y) <= coverage_threshold | is.na(rowSums(y))
     y_obs <- y[!filter_zeros, ]
-    # remove exact zero counts
+    
     flexmix::initFlexmix(y_obs ~ 1, 
                          k = k, 
                          model = flexmix::FLXMRglm(y_obs ~ ., family = "binomial"),
@@ -31,6 +33,10 @@ binommix <- function(counts_matrix, sample.id, k, niter = 1000, nrep = 10) {
                                         minprior = 0),
                          nrep = 10)
 }
+
+# mse <- function(counts_matrix, sample.id, fitted_model) {
+#    
+#}
 
 #' Fit binomial mixture  model in non-overlapping genomic windows
 #' 
