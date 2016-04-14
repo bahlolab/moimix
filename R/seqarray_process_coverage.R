@@ -77,8 +77,6 @@ processVarscan <- function(gdsfile, ref.allele) {
 alleleCounts <- function(gdsfile) {
     # I/O checks
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
-    # stopifnot(is.null(ref.allele) | ref.allele %in% c(0L,1L))
-    
     vars <- seqSummary(gdsfile, check="none", verbose=FALSE)$format$var.name
     
     # GATK will have just AD but no RD
@@ -93,6 +91,7 @@ alleleCounts <- function(gdsfile) {
     else {
         stop("No valid annotation/format tag to compute allele counts matrix")
     }
+    counts_matrix$dosage <- getDosage(isolates)
     structure(counts_matrix, class="alleleCounts")
 }
 
@@ -112,7 +111,7 @@ scaledProportion <- function(x, threshold, scale) {
 #' @export 
 coverageBySample <- function(coverage_list, threshold) {
     
-    stopifnot(inherits(coverage_list, 'alleleCounts') && length(coverage_list) == 2)
+    stopifnot(inherits(coverage_list, 'alleleCounts') && length(coverage_list) == 3)
     stopifnot(is.finite(threshold) && is.numeric(threshold))
     total_depth <- coverage_list$ref + coverage_list$alt
     nsamples <- nrow(total_depth)
@@ -128,7 +127,7 @@ coverageBySample <- function(coverage_list, threshold) {
 #' @return a vector of n.samples length
 #' @export
 coverageBySNP <- function(coverage_list, threshold) {
-    stopifnot(inherits(coverage_list, 'alleleCounts') && length(coverage_list) == 2)
+    stopifnot(inherits(coverage_list, 'alleleCounts') && length(coverage_list) == 3)
     stopifnot(is.finite(threshold) && is.numeric(threshold))
     
     total_depth <- coverage_list$ref + coverage_list$alt    
