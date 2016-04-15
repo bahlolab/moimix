@@ -14,7 +14,8 @@
 #' @export 
 binommix <- function(counts_matrix, sample.id, k, coverage_threshold = 0L, niter = 1000, nrep = 10) {
     # I/O error handling
-    if (!inherits(counts_matrix, "alleleCounts") && length(counts_matrix) != 3) stop("Invalid alleleCounts object")
+    if (!inherits(counts_matrix, "alleleCounts") && 
+        length(counts_matrix) != 3) stop("Invalid alleleCounts object")
     stopifnot(is.character(sample.id) && length(sample.id) == 1)
     stopifnot(is.integer(coverage_threshold) && coverage_threshold >= 0L)
     if (any(k < 1L | k > 5L ) ) stop("Number of mixture components must be between 1 and 5")
@@ -22,21 +23,50 @@ binommix <- function(counts_matrix, sample.id, k, coverage_threshold = 0L, niter
     # data set up
     y <- cbind(counts_matrix$alt[sample.id, ], 
                counts_matrix$ref[sample.id,])
-    # filter SNPs that are uninformative for MOI, low coverage
-    filter_zeros <- rowSums(y) <= coverage_threshold | is.na(rowSums(y))
-    y_obs <- y[!filter_zeros, ]
-    
-    flexmix::initFlexmix(y_obs ~ 1, 
+    # filter SNPs that are uninformative for MOI (i.e. non hets), low coverage or missing
+    keep_snps <- !is.na(rowSums(y)) & rowSums(y) > coverage_threshold & 
+        counts_matrix$dosage[sample.id, ] == 1 & !is.na(counts_matrix$dosage[sample.id, ])
+    y_obs <- y[keep_snps, ]
+    print(head(y_obs))
+    print(dim(y_obs))
+    print(any(is.na(y_obs)))
+    fits <- flexmix::initFlexmix(y_obs ~ 1, 
                          k = k, 
                          model = flexmix::FLXMRglm(y_obs ~ ., family = "binomial"),
                          control = list(iter.max = niter,
                                         minprior = 0),
                          nrep = 10)
+    baf <- y_obs[,2] / rowSums(y_obs)
+    structure(list(fits = fits, baf = baf, sample.id = sample.id), 
+              class = "moimix")
 }
 
-# mse <- function(counts_matrix, sample.id, fitted_model) {
-#    
-#}
+#' Model assessment for fitted model using MSE
+#' 
+#' @param fitted_models a moimix object
+getMSE <- function(fitted_models) {
+    #I/O error handling
+    if(!inherits(fitted_models, "moimix")) {
+        stop("Invalid moimix object")
+    }
+    all_k <- fitted_models$fits@k
+    mu_param <- lapply(all_k, function(k) { getTheta(fitted_models$fits, which(all_k == k))$mu.hat })
+    assignments <- lapply(all_k, function(k) clusters(getModel(fitted_models$fits, which(all_k == k))))
+    # compute euclidean distance to each assignment's mean
+    dist_to_clusters <- lapply(1:length(mu_param), 
+                               function(i) (fitted_models$baf - mu_param[[i]][assignments[[i]]])^2)
+    
+    # within each cluster take sum of squares
+    wcss <- lapply(1:length(mu_param), 
+                   function(i) tapply(dist_to_clusters[[i]], assignments[[i]], FUN=sum))
+    
+    wcss
+        
+}
+
+plot.moimix <- function(moimix_obj, ...) {
+    
+} 
 
 #' Fit binomial mixture  model in non-overlapping genomic windows
 #' 
