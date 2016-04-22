@@ -10,9 +10,8 @@
 #' @param k vector of mixture components to fit
 #' @param coverage_threshold exclude sites with total coverage < coverage_threshold
 #' @param niter number of iterations to run
-#' @param nrep number of repetitions to run
 #' @export 
-binommix <- function(counts_matrix, sample.id, k, coverage_threshold = 0L, niter = 1000, nrep = 10) {
+binommix <- function(counts_matrix, sample.id, k, coverage_threshold = 0L, niter = 1000) {
     # I/O error handling
     if (!inherits(counts_matrix, "alleleCounts") && 
         length(counts_matrix) != 3) stop("Invalid alleleCounts object")
@@ -23,20 +22,17 @@ binommix <- function(counts_matrix, sample.id, k, coverage_threshold = 0L, niter
     # data set up
     y <- cbind(counts_matrix$alt[sample.id, ], 
                counts_matrix$ref[sample.id,])
+    ds <- counts_matrix$dosage[sample.id, ]
     # filter SNPs that are uninformative for MOI (i.e. non hets), low coverage or missing
-    keep_snps <- !is.na(rowSums(y)) & rowSums(y) > coverage_threshold & 
-        counts_matrix$dosage[sample.id, ] == 1 & !is.na(counts_matrix$dosage[sample.id, ])
+    keep_snps <- !is.na(rowSums(y)) & rowSums(y) > coverage_threshold & !is.na(ds) & ds == 1
     y_obs <- y[keep_snps, ]
-    print(head(y_obs))
-    print(dim(y_obs))
-    print(any(is.na(y_obs)))
-    fits <- flexmix::initFlexmix(y_obs ~ 1, 
+    baf <- y_obs[,1] / rowSums(y_obs)
+    fits <- flexmix::initFlexmix(y_obs ~ 1,
                          k = k, 
-                         model = flexmix::FLXMRglm(y_obs ~ ., family = "binomial"),
+                         model = flexmix::FLXMRglm(y_obs ~ 1, family = "binomial"),
                          control = list(iter.max = niter,
                                         minprior = 0),
-                         nrep = 10)
-    baf <- y_obs[,2] / rowSums(y_obs)
+                         nrep = 5)
     structure(list(fits = fits, baf = baf, sample.id = sample.id), 
               class = "moimix")
 }
@@ -44,24 +40,27 @@ binommix <- function(counts_matrix, sample.id, k, coverage_threshold = 0L, niter
 #' Model assessment for fitted model using MSE
 #' 
 #' @param fitted_models a moimix object
+#' @export
 getMSE <- function(fitted_models) {
     #I/O error handling
     if(!inherits(fitted_models, "moimix")) {
         stop("Invalid moimix object")
     }
     all_k <- fitted_models$fits@k
-    mu_param <- lapply(all_k, function(k) { getTheta(fitted_models$fits, which(all_k == k))$mu.hat })
-    assignments <- lapply(all_k, function(k) clusters(getModel(fitted_models$fits, which(all_k == k))))
+    mu_param <- lapply(all_k, function(k) { getTheta(fitted_models$fits, 
+                                                     which(all_k == k))$mu.hat })
+    assignments <- lapply(all_k, function(k) clusters(getModel(fitted_models$fits, 
+                                                               which(all_k == k))))
     # compute euclidean distance to each assignment's mean
     dist_to_clusters <- lapply(1:length(mu_param), 
-                               function(i) (fitted_models$baf - mu_param[[i]][assignments[[i]]])^2)
-    
+                               function(i)  
+                                   (fitted_models$baf - mu_param[[i]][assignments[[i]]])^2)
     # within each cluster take sum of squares
     wcss <- lapply(1:length(mu_param), 
-                   function(i) tapply(dist_to_clusters[[i]], assignments[[i]], FUN=sum))
+                   function(i) tapply(dist_to_clusters[[i]], assignments[[i]], FUN=mean))
     
-    wcss
-        
+    list(dist_euclid = dist_to_clusters, wcss = wcss)
+    
 }
 
 plot.moimix <- function(moimix_obj, ...) {
