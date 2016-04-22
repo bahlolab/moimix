@@ -147,7 +147,7 @@ set.seed(2002)
 counts <- alleleCounts(isolates)
 
 # fit a model on sample PA0021-C, multiple clone infection
-m1 <- binommix(counts, sample.id = "PA0021-C", k = 2)
+m1 <- binommix(counts, sample.id = "PA0021-C", k = 2:4)
 # to inspect the model and view parameter estimates
 summary(m1)
 param.estimates <- getTheta(m1)
@@ -168,7 +168,10 @@ fws_all <- getFws(isolates)
 hist(fws_all)
 # see if our sample that we estimated is multiclonal according to fws
 fws_all["PA0021-C"] < 0.95
+# finished analysis on mixture isolates, close it
+seqClose(isolates)
 ```
+
 
 # Session Info
 ```{r session-info}
