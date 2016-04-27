@@ -91,7 +91,8 @@ extractBarcode <- function(gdsfile, variant.id, barcode.file) {
 #' @param gdsfile a \code{\link{SeqVarGDS}} object
 #' @param publication a character string representing a publication
 #' @importFrom SeqArray granges
-#' @importFrom GenomicRanges findOverlaps subjectHits 
+#' @importFrom IRanges findOverlaps 
+#' @importFrom S4Vectors subjectHits 
 #' @export 
 getBarcodeVariants <- function(gdsfile, publication = "Volkman2008") {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
