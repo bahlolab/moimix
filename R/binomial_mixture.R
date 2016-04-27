@@ -50,7 +50,7 @@ getMSE <- function(fitted_models) {
     mu_param <- lapply(all_k, function(k) { getTheta(fitted_models$fits, 
                                                      which(all_k == k))$mu.hat })
     assignments <- lapply(all_k, function(k) clusters(getModel(fitted_models$fits, 
-                                                               which(all_k == k))))
+                                                               k)))
     # compute euclidean distance to each assignment's mean
     dist_to_clusters <- lapply(1:length(mu_param), 
                                function(i)  
@@ -107,25 +107,29 @@ binomMixSlide <- function(counts_matrix, sample.id, window_list, bpparam) {
 #' @export
 getTheta <- function(model, k = NULL, criterion = NULL) {
     # error handling
-    if (is(model, "stepFlexmix")) {
-        if(is.null(k) && is.null(criterion)) {
+    if (inherits(model, "stepFlexmix")) {
+        if (is.null(k) && is.null(criterion)) {
             stop("model is stepFlexmix object, 
                  provide information criterion or number of components")
         }
         
+        if (!is.null(k) && !(k %in% model@k)) {
+            stop(paste(k, "component mixture model not found in stepFlexmix object"))
+        }
+        
         # model selection for stepMix 
-        if(!is.null(criterion)) {
+        if (!is.null(criterion)) {
             stopifnot(criterion %in% c("AIC","BIC", "ICL"))
             model.select <- getModel(model, criterion)
         }
         else if (!is.null(k)) {
-            model.select <- getModel(model, k)
+            model.select <- getModel(model, which(model@k == k))
         }
         data.frame(pi.hat = prior(model.select),
                    mu.hat = toProb(parameters(model.select)),
                    row.names = NULL)
     }
-    else if(is(model, "flexmix")) {
+    else if (inherits(model, "flexmix")) {
         data.frame(pi.hat = prior(model),
                    mu.hat = toProb(parameters(model)),
                    row.names = NULL)
