@@ -105,6 +105,7 @@ seqSetFilter(isolates,
              variant.id = coords$variant.id[coords$chromosome != "Pf3D7_API_v3"])
 ```
 
+Furthermore, we can extract the high quality SNPs using
 ## Estimating the BAF matrix
 
 The first step in our clonality analysis is to estiamte the B-allele frequencies
@@ -147,15 +148,14 @@ set.seed(2002)
 counts <- alleleCounts(isolates)
 
 # fit a model on sample PA0021-C, multiple clone infection
-m1 <- binommix(counts, sample.id = "PA0021-C", k = 2:4)
+m1 <- binommix(counts, sample.id = "PA0021-C", k = 2)
 # to inspect the model and view parameter estimates
-summary(m1)
-param.estimates <- getTheta(m1)
+param_estimates <- getTheta(m1$fits)
 param.estimates
 
 # visualise model output
 plot(isolate_baf, "PA0021-C")
-abline(h = param.estimates$mu.hat)
+abline(h = param_estimates$mu.hat)
 
 ```
 
