@@ -4,10 +4,13 @@
 \alias{extractPED}
 \title{Extract PED files from gds}
 \usage{
-extractPED(gdsfile, use.hets = FALSE, out.file)
+extractPED(gdsfile, moi.estimates = NULL, use.hets = FALSE, out.file)
 }
 \arguments{
 \item{gdsfile}{a \code{\link[SeqArray]{SeqVarGDSClass}} object}
+
+\item{moi.estimates}{a vector of MOI values obtained by \code{\link{binommix}} 
+for each sample. DEFAULT NULL}
 
 \item{use.hets}{FALSE include heterozygote genotypes}
 
@@ -18,7 +21,10 @@ Extract PED files from gds
 }
 \details{
 This function writes a plink .ped and .map file for a given
-gdsfile. If the use.hets option is true the genotypes are used as is, other
+gdsfile. If moi.estimates is set then use.hets is redundant. It will set
+the sex in each the ped file to 2 if MOI > 1 and set heterozygote genotypes
+to missing for MOI = 1 calls. This is for use in isoRelate.
+If the use.hets option is true the genotypes are used as is, other
 wise heterzygotes are set to missing. This function is slow if there
 are a large number of variants in the GDS file.
 }
