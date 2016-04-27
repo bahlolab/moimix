@@ -61,16 +61,16 @@ plot.bafMatrix <- function(baf, sample.id, assignments = NULL, ...) {
                      coords_ordered$chromosome, median)
     
     if(is.null(assignments)) {
-        bf <- baf$baf_matrix[sample.id, ][coords_ordered$variant.id]
+        bf <- baf$baf_matrix[sample.id, as.character(coords_ordered$variant.id)]
         plot(bf, xaxt ="n", xlab = "", 
              ylim = c(0,1), ylab = "SNV frequency", 
              col = alpha("black", 0.5), pch = 16, ...)
         axis(side = 1, at = breaks, labels = names(breaks), 
              las = 3, cex.axis = 0.6, ...)
     } else {
-        bf <- baf$baf_matrix[sample.id, ][coords_ordered$variant.id]
+        bf <- baf$baf_matrix[sample.id, as.character(coords_ordered$variant.id)]
         # remove missing values 
-        memberships <- assignments[coords_ordered$variant.id]
+        memberships <- assignments[as.character(coords_ordered$variant.id)]
         stopifnot(length(bf) == length(assignments))
         color_clusters <- brewer.pal(length(unique(memberships)), "Paired")
         plot(bf, xaxt ="n", xlab = "", 
