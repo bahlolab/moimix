@@ -1,6 +1,6 @@
 Package: moimix
 Title: Estimating mulitplicity of infection from high-throughput sequencing data
-Version: 0.0.1.9000
+Version: 0.0.1.9001
 Authors@R: "Stuart Lee <lee.s@wehi.edu.au> [aut, cre]"
 Description: Evaluate multiplicity of infection (MOI) of organisms using 
     binomial mixture models and other population genetics methods. moimix can be used to simulate 

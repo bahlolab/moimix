@@ -4,8 +4,7 @@
 \alias{binommix}
 \title{Fit binomial mixture model on coverage data}
 \usage{
-binommix(counts_matrix, sample.id, k, coverage_threshold = 0L, niter = 1000,
-  nrep = 10)
+binommix(counts_matrix, sample.id, k, coverage_threshold = 0L, niter = 1000)
 }
 \arguments{
 \item{counts_matrix}{an \code{\link{alleleCounts}} object with ref and alt slots filled}
@@ -17,8 +16,6 @@ binommix(counts_matrix, sample.id, k, coverage_threshold = 0L, niter = 1000,
 \item{coverage_threshold}{exclude sites with total coverage < coverage_threshold}
 
 \item{niter}{number of iterations to run}
-
-\item{nrep}{number of repetitions to run}
 }
 \description{
 Fit binomial mixture model on coverage data

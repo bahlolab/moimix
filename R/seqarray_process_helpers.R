@@ -140,21 +140,29 @@ callMajor <- function(gdsfile, get.nucleotides = FALSE, use.hets = FALSE) {
 #' Extract PED files from gds
 #' 
 #' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
+#' @param moi.estimates a vector of MOI values obtained by \code{\link{binommix}} 
+#' for each sample. DEFAULT NULL
 #' @param use.hets FALSE include heterozygote genotypes
 #' @param out.file prefix of PLINK files for output
 #' @details This function writes a plink .ped and .map file for a given
-#' gdsfile. If the use.hets option is true the genotypes are used as is, other
+#' gdsfile. If moi.estimates is set then use.hets is redundant. It will set
+#' the sex in each the ped file to 2 if MOI > 1 and set heterozygote genotypes
+#' to missing for MOI = 1 calls. This is for use in isoRelate.
+#' If the use.hets option is true the genotypes are used as is, other
 #' wise heterzygotes are set to missing. This function is slow if there
 #' are a large number of variants in the GDS file. 
 #' @importFrom SeqArray seqGetData seqApply
 #' @export
-extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
+extractPED <- function(gdsfile, moi.estimates = NULL, use.hets = FALSE, out.file) {
     # construct the ped file requires 6 columns
     # Family ID, Individual ID, Paternal ID, Maternal ID, Sex, Phenotype
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
+    stopifnot(is.logical(use.hets) && length(use.hets) == 1)
+    stopifnot(is.character(out.file) && length(out.file == 1))
     sample.id <- seqGetData(gdsfile, "sample.id")
-    ped_meta <- data.frame(famID = sample.id, indID = sample.id, 
-                           paternalID = 0, maternalID = 0, sex = 1, pheno = 2)
+    if (!is.null(moi.estimates) && length(moi.estimates) != length(sample.id)) {
+        stop("Length of moi.estimates must match number of samples")
+    }
     
     # extract samples
     # if use.hets we will code hets as missing
@@ -165,7 +173,7 @@ extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
                  please filter before extracting PED file.")
         }
         sites <- t(gt)
-        if (use.hets) {
+        if (hets) {
             return(sites)
         }
         else {
@@ -173,17 +181,47 @@ extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
             return(sites)
         }
     }
-    # create genotype list
-    gt_list <- seqApply(gdsfile, "genotype", 
-                        FUN = genotypeRecode, hets = use.hets, 
-                        margin = "by.variant", as.is = 'list')
+    
+    genotypeRecodeMOI <- function(gt, moi) {
+        if (nrow(gt) != 2) {
+            stop("Non-biallelic variant with non-diploid genotype, 
+                 please filter before extracting PED file.")
+        }
+        
+        sites <- t(gt)
+        # recode het calls as missing for MOI = 1
+        sites[moi.estimates == 1, 
+              sites[moi.estimates == 1, 1] != sites[moi.estimates == 1, 2]] <- NA
+        sites
+    }
+    
+    if (!is.null(moi.estimates)) {
+        sex <- ifelse(moi.estimates > 1, 2, 1)
+        ped_meta <- data.frame(famID = sample.id, indID = sample.id,
+                               paternalID = 0, maternalID = 0, 
+                               sex = sex, pheno = 2)
+        # since we are using moi as sex = 2 we'll code them
+        # otherwise for samples where moi = 1 we'll code them as missing
+        gt_list <- seqApply(gdsfile, "genotype", 
+                            FUN = genotypeRecodeMOI, moi = sex, 
+                            margin = "by.variant", as.is = 'list')
+
+        
+    } else {
+        ped_meta <- data.frame(famID = sample.id, indID = sample.id, 
+                               paternalID = 0, maternalID = 0, 
+                               sex = 1, pheno = 2)
+        gt_list <- seqApply(gdsfile, "genotype", 
+                            FUN = genotypeRecode, hets = use.hets, 
+                            margin = "by.variant", as.is = 'list')
+    }
     
     gt_matrix <- do.call(cbind, gt_list)
-    print(dim(gt_matrix))
     # recode using plink formats
     gt_matrix[gt_matrix == 1] <- 2
     gt_matrix[gt_matrix == 0] <- 1
     gt_matrix[is.na(gt_matrix)] <- 0
+    
     
     ped_file <- paste0(out.file, ".ped")
     ped_data <- cbind(ped_meta, gt_matrix)
@@ -193,6 +231,7 @@ extractPED <- function(gdsfile, use.hets = FALSE, out.file) {
     chr <- seqGetData(gdsfile, "chromosome")
     pos <- seqGetData(gdsfile, "position")
     snp_id <- paste0(chr, ":", pos)
+    # TODO: build proper genetic map for genetic distance setting
     genetic_distance <- pos / 17000
     map_data <- data.frame(chr, snp_id, genetic_distance, pos)
     

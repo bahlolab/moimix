@@ -5,7 +5,6 @@
 # Date: 11/05/2015
 #' Collapse allele frequency to half axis
 #' @param p vector of proprotions
-#' @export
 collapseProbs <- function(p) { ifelse(p > 0.5, 1-p, p)}
 
 #' Filter read-count matrix
@@ -13,7 +12,6 @@ collapseProbs <- function(p) { ifelse(p > 0.5, 1-p, p)}
 #' @param N vector of site depths
 #' @param p vector containing boundary cut-offs for inclusion
 #' @return matrix with two columns
-#' @export
 filterCounts <- function(x, N, p = c(0.01, 0.99)) {
     if (length(p) != 2) stop("Boundaries proportion must be between 0 and 1")
     if (sum(p) != 1) stop("p must sum to 1")
