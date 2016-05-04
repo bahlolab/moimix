@@ -1,7 +1,6 @@
 .RData
 ./data
 .Rproj.user
-.Rbuildignore
 .Rhistory
 ._*
 .DS_Store

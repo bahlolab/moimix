@@ -12,7 +12,7 @@ LazyData: true
 Imports:
     MCMCpack,
     foreach,
-    SeqArray,
+    SeqArray (>= 1.10.6),
     SeqVarTools,
     scales,
     RColorBrewer,
