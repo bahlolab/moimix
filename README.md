@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/bahlolab/moimix.svg?branch=master)](https://travis-ci.org/bahlolab/moimix)
 # moimix: an R package for evaluating multiplicity of infection in malaria parasites
 http://bahlolab.github.io/moimix/
 
