@@ -14,6 +14,10 @@ Imports:
     foreach,
     SeqArray,
     SeqVarTools,
+    scales,
+    RColorBrewer,
+    IRanges,
+    S4Vectors
 Suggests:
     testthat,
     knitr,
