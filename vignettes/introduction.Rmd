@@ -151,7 +151,7 @@ counts <- alleleCounts(isolates)
 m1 <- binommix(counts, sample.id = "PA0021-C", k = 2)
 # to inspect the model and view parameter estimates
 param_estimates <- getTheta(m1$fits)
-param.estimates
+param_estimates
 
 # visualise model output
 plot(isolate_baf, "PA0021-C")
