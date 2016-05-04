@@ -1,6 +1,5 @@
 language: r
 r: bioc-devel
-r_packages: "flexmix", "S4Vectors", "MCMCpack", "scales", "foreach", "RColorBrewer", "knitr", "testthat", "rmarkdown"
-bioc_packages: "IRanges", "SeqArray", "SeqVarTools", "BiocStyle"
-cache: packages
-
+sudo: false
+cache: 
+    packages: true
