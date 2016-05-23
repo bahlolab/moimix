@@ -37,105 +37,40 @@ binommix <- function(counts_matrix, sample.id, k, coverage_threshold = 0L, niter
               class = "moimix")
 }
 
-#' Model assessment for fitted model using MSE
-#' 
-#' @param fitted_models a moimix object
-#' @export
-getMSE <- function(fitted_models) {
-    #I/O error handling
-    if(!inherits(fitted_models, "moimix")) {
-        stop("Invalid moimix object")
-    }
-    all_k <- fitted_models$fits@k
-    mu_param <- lapply(all_k, function(k) { getTheta(fitted_models$fits, 
-                                                     which(all_k == k))$mu.hat })
-    assignments <- lapply(all_k, function(k) clusters(getModel(fitted_models$fits, 
-                                                               k)))
-    # compute euclidean distance to each assignment's mean
-    dist_to_clusters <- lapply(1:length(mu_param), 
-                               function(i)  
-                                   (fitted_models$baf - mu_param[[i]][assignments[[i]]])^2)
-    # within each cluster take sum of squares
-    wcss <- lapply(1:length(mu_param), 
-                   function(i) tapply(dist_to_clusters[[i]], assignments[[i]], FUN=mean))
-    
-    list(dist_euclid = dist_to_clusters, wcss = wcss)
-    
-}
 
 plot.moimix <- function(moimix_obj, ...) {
     
 } 
 
-#' Fit binomial mixture  model in non-overlapping genomic windows
+#' #' Fit binomial mixture  model in non-overlapping genomic windows
+#' #' 
+#' #' @param counts_matrix an \code{\link{alleleCounts}} object with ref and alt slots filled
+#' #' @param sample.id character sample.id to fit model on.
+#' #' @param window_list list of genomic windows
+#' #' @param bparam options to be passed to \code{\link[BiocParallel]{bpapply}}
+#' #' @return modelWindow object 
+#' #' @importFrom flexmix initFlexmix FLXMRglm
+#' #' @importFrom foreach foreach
+#' #' @export
+#' binomMixSlide <- function(counts_matrix, sample.id, window_list, bpparam) {
+#'     # need to re-edit to use BioCParallel
+#'     y <- cbind(counts_matrix$alt[sample.id, ], 
+#'                counts_matrix$ref[sample.id, ])
+#'     
+#'     
+#'     foreach(chr=iter(names(window_list))) %:% 
+#'         foreach(window=unique(window_list[[chr]]$window), .packages = "flexmix") %do% {
+#'             window_y <- y[window_list[[chr]]$variant.id[window_list[[chr]]$window == window], ]
+#'             filter_zeros <- window_y[,1]==0 | window_y[,2] == 0
+#'             y_obs <- y[!filter_zeros, ]
+#'             flexmix::initFlexmix(y_obs ~ 1, 
+#'                                  k = 2, 
+#'                                  model = flexmix::FLXMRglm(y_obs ~ ., family = "binomial"),
+#'                                  control = list(iter.max = 500,
+#'                                                 minprior = 0))
+#'         }
 #' 
-#' @param counts_matrix an \code{\link{alleleCounts}} object with ref and alt slots filled
-#' @param sample.id character sample.id to fit model on.
-#' @param window_list list of genomic windows
-#' @param bparam options to be passed to \code{\link[BiocParallel]{bpapply}}
-#' @return modelWindow object 
-#' @importFrom flexmix initFlexmix FLXMRglm
-#' @importFrom foreach foreach
-#' @importFrom iterators iter
-binomMixSlide <- function(counts_matrix, sample.id, window_list, bpparam) {
-    # need to re-edit to use BioCParallel
-    y <- cbind(counts_matrix$alt[sample.id, ], 
-               counts_matrix$ref[sample.id, ])
-    
-    
-    foreach(chr=iter(names(window_list))) %:% 
-        foreach(window=unique(window_list[[chr]]$window), .packages = "flexmix") %do% {
-            window_y <- y[window_list[[chr]]$variant.id[window_list[[chr]]$window == window], ]
-            filter_zeros <- window_y[,1]==0 | window_y[,2] == 0
-            y_obs <- y[!filter_zeros, ]
-            flexmix::initFlexmix(y_obs ~ 1, 
-                                 k = 2, 
-                                 model = flexmix::FLXMRglm(y_obs ~ ., family = "binomial"),
-                                 control = list(iter.max = 500,
-                                                minprior = 0))
-        }
+#' }
 
-}
 
-#' Return estimated model parameters
-#' 
-#' @importFrom flexmix getModel parameters prior
-#' @param model stepFlexmix or flexmix object
-#' @param k if stepFlexmix choose model with k components
-#' @param criterion if stepFlexmix choose model according to information 
-#' criterion
-#' @export
-getTheta <- function(model, k = NULL, criterion = NULL) {
-    # error handling
-    if (inherits(model, "stepFlexmix")) {
-        if (is.null(k) && is.null(criterion)) {
-            stop("model is stepFlexmix object, 
-                 provide information criterion or number of components")
-        }
-        
-        if (!is.null(k) && !(k %in% model@k)) {
-            stop(paste(k, "component mixture model not found in stepFlexmix object"))
-        }
-        
-        # model selection for stepMix 
-        if (!is.null(criterion)) {
-            stopifnot(criterion %in% c("AIC","BIC", "ICL"))
-            model.select <- getModel(model, criterion)
-        }
-        else if (!is.null(k)) {
-            model.select <- getModel(model, which(model@k == k))
-        }
-        data.frame(pi.hat = prior(model.select),
-                   mu.hat = toProb(parameters(model.select)),
-                   row.names = NULL)
-    }
-    else if (inherits(model, "flexmix")) {
-        data.frame(pi.hat = prior(model),
-                   mu.hat = toProb(parameters(model)),
-                   row.names = NULL)
-    }
-    else {
-        stop("model must be flexmix or stepFlexmix class")
-    }
-}
 

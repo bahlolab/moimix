@@ -76,4 +76,22 @@ study4 <- function(n.snps = c(1000, 10000, 25000, 50000, 100000), ...) {
     return(out)   
 }
 
+#' Generate iid mixture random variables 
+#' for testing EM implementation
+#' 
+#' @param n number of realisations
+#' @param N number of trials
+#' @param k number of components
+#' @param mu true mixture components
+#' @param pi true mixture weights
+sampleMM <- function(n, N, k, mu, pi) {
+    # assert that pi and mu must have length k
+    stopifnot(length(pi) == k)
+    stopifnot(length(mu) == k)
+    # generate true hidden states
+    states <- sample.int(k, size = n, replace = TRUE, prob = pi)
+    # sample from binomial according to states
+    observations <- rbinom(n, size = N, prob = mu[states])
+    list(obs = observations, states = states)
+}
 

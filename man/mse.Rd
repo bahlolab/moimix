@@ -12,6 +12,7 @@ mse(model, theta)
 \item{mixture}{estimated mixture model}
 }
 \description{
-Compute sum of squares for mixture components
+Compute sum of squares for mixture components based on known
+truth.
 }
 
