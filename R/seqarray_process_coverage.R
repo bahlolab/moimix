@@ -77,7 +77,7 @@ processVarscan <- function(gdsfile, ref.allele) {
 alleleCounts <- function(gdsfile) {
     # I/O checks
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
-    vars <- seqSummary(gdsfile, check="none", verbose=FALSE)$format$var.name
+    vars <-seqSummary(isolates, check="none", verbose=FALSE)$format$ID
     
     # GATK will have just AD but no RD
     if("AD" %in% vars && !("RD" %in% vars))  {
