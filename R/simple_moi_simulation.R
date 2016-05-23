@@ -11,13 +11,11 @@
 #' @param n.samples number of infected hosts in population
 #' @param n.snps number of SNPs observed
 #' @param moi number of clonal infections
-#' @param coverage vector of total coverage per sample
-#' @param error probability of error in read counts
+#' @param mean_coverage average coverage of reads
+#' @param error_coverage deviation in coverage of reads
 #' @param pi.true optional matrix of true mixture proportions
 #' @param mu.true optional matrix of true mixture components
-#' @param aaf optional vector of underlying SNV proportions 
-#' @param aaf.dist  sampling distribution for SNV frequencies
-#' @param ... other parameters to pass to aaf.dist
+#' 
 #' @return A list containing the following elements
 #'  pi.true an n.samples by moi matrix containing true clonal proportions
 #'  mu.true an n.samplps by moi matrix containing true genotype proportions
@@ -25,23 +23,17 @@
 #'  read.counts an n.samples by n.snps matrix containing read counts supporting each SNV
 #'  error.counts an n.samples by n.snps matrix containing number of error reads 
 #' @importFrom MCMCpack rdirichlet
-#' @importFrom foreach foreach
+#' @importFrom BiocParallel bplapply
+#' @importFrom dplyr bind_rows
 #' @export
-simulateMOI <- function(n.samples, n.snps, moi, coverage, error,
-                         pi.true = NULL, mu.true = NULL, aaf = NULL,
-                         aaf.dist, ...) {
+simulateMOI <- function(n.samples, n.snps, moi, mean_coverage, error_coverage,
+                         pi.true = NULL, mu.true = NULL) {
     # I/0 checking
     if (moi < 2 || moi > 5) {
         stop("Number of infections must be between 2 and 5, inclusive")
     }
     
-    if (length(coverage) != n.samples) {
-        stop("coverage vector must have same length as n.samples")
-    }
     
-    if(error > 1 || error < 0) {
-        stop("Error probability must be between 0 and 1")
-    }
     
     # check clonal mixture matrix
     if(!is.null(pi.true)) {
@@ -75,77 +67,68 @@ simulateMOI <- function(n.samples, n.snps, moi, coverage, error,
         }
     }
     
-    if(!is.null(aaf)) {
-        if(length(aaf) != n.snps) {
-            stop("aaf must have length n.snps")
-        }
-    }
     
-    # step 1, generate underlying parameters
+    # step 1, generate underlying parameters from dirichlet prior
     if (is.null(pi.true)) {
         pi.true <- t(MCMCpack::rdirichlet(n.samples, 
-                                          alpha = 2^(1: moi)))
+                                          alpha = 2^(1:moi)))
         
     }
     
     if (is.null(mu.true)) {
-        # produces an moi by n.samples
-        mu.true <- t(MCMCpack::rdirichlet(n.samples,
+        mu.true <- t(MCMCpack::rdirichlet(n.samples, 
                                           alpha = 2^(1:moi)))
     }
     # generate mixture indexes for each SNV for each isolate
     # produce an n.samples by n.snps matrix with assignments
-    clusters <- foreach(i=1:n.samples) %dopar% {
-        
+    # i.e. underlying haplotypes here for major clone
+    clusters <- bplapply(1:n.samples, function(i) {
         rmultinom(n.snps, size = 1, prob = pi.true[,i])
-    } 
+
+    })
     # generate underlying SNV frequenciences
-    if (is.null(aaf)) {
-        aaf.dist <- match.fun(aaf.dist)
-        aaf <- aaf.dist(n=n.snps, ...)
-    }
+    # use rtexp with fixed lambda to three (lots of rare variants)
+    aaf <- rtexp(n.snps, 3 , 1)
+    # generate observed coverage distribution from binomial
+    coverage <- rbinom(n.snps, mean_coverage, prob = 1 - error_coverage)
+    
     # conditional probabilities of observing each SNV given underlying
     # clonal genotype
     # generate matrix of assignments
-    sample.reads <- foreach(i =1:n.samples) %dopar% {
-        rmultinom(n.snps, 
-                  size = coverage[i], 
-                  prob = mu.true[,i])
-    }
-
-    # generate whether SNV is observed using Bernoulli distribution
-    # conditional on cluster membership
-    snv.observed <- foreach(i = 1:n.samples) %dopar% {
-        sapply(aaf, rbinom, n=moi, size = 1)
-    }
+    sample.reads.alt <- bplapply(1:n.samples,
+                             function(i) {
+                                 cl <- apply(clusters[[i]], 2, which.max)
+                                 mu <- mu.true[,i]
+                                 rbinom(n.snps, 
+                                        size = coverage, 
+                                        prob = mu[cl])
+                             })
+    
+    # generate whether SNV is observed within a clone using
+    # based on overall coverage and alternate allele frequency
+    snv.observed <- bplapply(1:n.samples, function(i) {
+        sapply(aaf, rbinom, n = moi, size = 1)
+    })
     
     # generate observed read counts in support of each SNV for each clone
-    read.counts <- foreach(i = 1:n.samples, .combine = cbind) %dopar% {
-        colSums(clusters[[i]]*sample.reads[[i]]*snv.observed[[i]])
-    }
-    
-    
-    
-    
-    if (error > 0) {
-        # generate Binomial realisations for probability
-        # of observing error reads in support of SNV 
-        error.counts <- foreach(i = 1:n.samples, .combine = cbind) %dopar% {
-            rbinom(n.snps, size = coverage[i], prob = error)
-        }
+    # this is generated by whether a clone carries the variant 
+    # multiplied by the number of reads within the clone and multiplied
+    # by wheter the variant is observed
+    read.counts.by.clone <- bplapply(1:n.samples, function(i) {
+      snv.observed[[i]] * sample.reads.alt[[i]] }
+    )
         
-        
-        read.counts <- read.counts - error.counts
-        read.counts[read.counts < 0] <- 0
-        
-    }    
+    read.counts.all <- bplapply(read.counts.by.clone, colSums)
+    
     
     
     return(list(pi.true = pi.true, 
                 mu.true = mu.true,
+                coverage = coverage,
                 moi = clusters,
                 aaf = aaf,
-                read.counts = read.counts,
+                read.counts.by.clone = read.counts.by.clone,
+                read.counts.all = read.counts.all,
                 snv.observed = snv.observed))
     
 }
