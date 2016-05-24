@@ -12,7 +12,7 @@
 bafMatrix <- function(gdsfile) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     # estimate NRAF matrix, currently on GATK vcf file support
-    vars <- seqSummary(isolates, check="none", verbose=FALSE)$format$ID
+    vars <- seqSummary(gdsfile, check="none", verbose=FALSE)$format$ID
     if(!("AD" %in% vars)) {
         stop("Must have annotation/format/AD tag to compute B-allele frequencies")
     }

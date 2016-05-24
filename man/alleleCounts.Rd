@@ -20,7 +20,7 @@ If \code{ref.allele = NULL}, the function returns a list
 of matrices corresponding to the read counts of the reference and alternate
 alleles respectively, while if \code{ref.allele = 0L} or \code{ref.allele = 1L}
 the function returns a  matrix corresponding the reference or alternate
-read counts. Currently, the AD tag formats from varscan and GATK
+read counts. Currently, the AD tag formats from varscan2re and GATK
 are supported.
 }
 

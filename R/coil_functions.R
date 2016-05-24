@@ -88,7 +88,7 @@ extractBarcode <- function(gdsfile, variant.id, barcode.file) {
 
 #' Helper functions for extracting variant IDs corresponding to previously published
 #' barcodes.
-#' @param gdsfile a \code{\link{SeqVarGDS}} object
+#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDS}} object
 #' @param publication a character string representing a publication
 #' @importFrom SeqArray granges
 #' @importFrom IRanges findOverlaps 
@@ -117,8 +117,8 @@ getBarcodeVariants <- function(gdsfile, publication = "Volkman2008") {
 #' Generate GenomicRanges object from GDS file
 #' 
 #' @param publication a character string indicating malaria publication (default Volkmann2008)
-#' @importFrom GenomicRanges makeGRangesFromDataFrame
 #' @details Return a GenomicRanges object containing Pf barcode information from Volkmann, 2008.
+#' @importFrom GenomicRanges makeGRangesFromDataFrame
 #' @export
 barcodes <- function(publication) {
     
@@ -143,10 +143,10 @@ barcodes <- function(publication) {
                                                   width = 2, format = "d", flag = "0"),
                                           "_v3")
         volkman.data$position <- as.integer(volkman.data$position)
-        GenomicRanges::makeGRangesFromDataFrame(volkman.data, 
-                                                start.field = "position", 
-                                                end.field = "position",
-                                                keep.extra.columns = TRUE)
+        makeGRangesFromDataFrame(volkman.data, 
+                                 start.field = "position", 
+                                 end.field = "position",
+                                 keep.extra.columns = TRUE)
     } else {
         stop("No barcode corresponding to that publication.")
     }
