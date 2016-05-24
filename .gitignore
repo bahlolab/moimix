@@ -7,4 +7,5 @@
 inst/doc
 vignettes/*.html
 vignettes/*.md
-reports/
+reports/*.vcf.gz
+
