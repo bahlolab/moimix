@@ -15,9 +15,11 @@ binommix <- function(counts_matrix, sample.id, k, coverage_threshold = 0L, niter
     # I/O error handling
     if (!inherits(counts_matrix, "alleleCounts") && 
         length(counts_matrix) != 3) stop("Invalid alleleCounts object")
+    
     stopifnot(is.character(sample.id) && length(sample.id) == 1)
+    if (!(sample.id %in% dimnames(counts_matrix$ref)$sample)) stop("sample.id not found in counts_matrix")
     stopifnot(is.integer(coverage_threshold) && coverage_threshold >= 0L)
-    if (any(k < 1L | k > 5L ) ) stop("Number of mixture components must be between 1 and 5")
+    if (any(k < 1L | k > 5L | is.na(k)) ) stop("Number of mixture components must be between 1 and 5")
     
     # data set up
     y <- cbind(counts_matrix$alt[sample.id, ], 

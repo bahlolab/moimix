@@ -6,6 +6,9 @@
 \usage{
 barcodes(publication)
 }
+\arguments{
+\item{publication}{a character string indicating malaria publication (default Volkmann2008)}
+}
 \description{
 Generate GenomicRanges object from GDS file
 }

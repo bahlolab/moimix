@@ -4,8 +4,8 @@
 \alias{simulateMOI}
 \title{Simple simulation of MOI SNV data}
 \usage{
-simulateMOI(n.samples, n.snps, moi, coverage, error, pi.true = NULL,
-  mu.true = NULL, aaf = NULL, aaf.dist, ...)
+simulateMOI(n.samples, n.snps, moi, mean_coverage, error_coverage,
+  pi.true = NULL, mu.true = NULL)
 }
 \arguments{
 \item{n.samples}{number of infected hosts in population}
@@ -14,19 +14,13 @@ simulateMOI(n.samples, n.snps, moi, coverage, error, pi.true = NULL,
 
 \item{moi}{number of clonal infections}
 
-\item{coverage}{vector of total coverage per sample}
+\item{mean_coverage}{average coverage of reads}
 
-\item{error}{probability of error in read counts}
+\item{error_coverage}{deviation in coverage of reads}
 
 \item{pi.true}{optional matrix of true mixture proportions}
 
 \item{mu.true}{optional matrix of true mixture components}
-
-\item{aaf}{optional vector of underlying SNV proportions}
-
-\item{aaf.dist}{sampling distribution for SNV frequencies}
-
-\item{...}{other parameters to pass to aaf.dist}
 }
 \value{
 A list containing the following elements

@@ -4,19 +4,23 @@
 \alias{plot.bafMatrix}
 \title{Plot bafMatrix object}
 \usage{
-plot.bafMatrix(baf, sample.id, assignments = NULL, ...)
+\method{plot}{bafMatrix}(x, sample.id, assignments = NULL, y = NULL,
+  xlab = NULL, ylab = "SNV frequency", ylim = c(0, 1), pch = 16, ...)
 }
 \arguments{
-\item{baf}{a bafMatrix object}
+\item{x}{a bafMatrix object}
 
 \item{sample.id}{character name of sample to plot}
 
 \item{assignments}{integer vector of cluster memberships (NULL)}
+
+\item{...}{other parameters to pass to \code{\link[graphics]{plot}}}
 }
 \description{
 Plot bafMatrix object
 }
 \details{
-plots the genome-wide signal of MOI within an isolate
+Plots the genome-wide signal of MOI within an isolate from
+B-allele frequencies.
 }
 
