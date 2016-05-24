@@ -17,7 +17,8 @@ Imports:
     scales,
     RColorBrewer,
     IRanges,
-    S4Vectors
+    S4Vectors,
+    BiocParallel
 Suggests:
     testthat,
     knitr,
