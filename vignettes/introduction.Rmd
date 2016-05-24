@@ -105,9 +105,20 @@ seqSetFilter(isolates,
              variant.id = coords$variant.id[coords$chromosome != "Pf3D7_API_v3"])
 ```
 
-Furthermore, we can extract the high quality SNPs using
-## Estimating the BAF matrix
+Furthermore, we can extract high quality ('true positive') SNPs using the `seqGetData` 
+function. Here we filter variants based on the QD and MQ tags in the VCF.
 
+```{r filter-quality}
+# extract tags from GATK Haplotype Caller using convienence funciton
+gatk_df <- getGATKInfo(isolates)
+
+variants_to_keep <- gatk_df$variant.id[gatk_df$qd > 10 & gatk_df$mq > 50]
+
+seqSetFilter(isolates, variant.id = variants_to_keep)
+
+```
+
+## Estimating the BAF matrix
 The first step in our clonality analysis is to estiamte the B-allele frequencies
 for each isolate directly from the sequencing depth. 
 We construct a `bafMatrix` object which stores the estimates of the B-allele 
@@ -125,12 +136,12 @@ and a sample identifer to `plot`.
 
 Here's an example for an isolate that is from a single-clone infection.
 ```{r plot-baf-moi1}
-plot(isolate_baf, "PA0022-C")
+plot(isolate_baf, sample.id = "PA0022-C")
 ```
 
 And an example of multiple-clone infection.
 ```{r plot-baf-moi2}
-plot(isolate_baf,  "PA0021-C")
+plot(isolate_baf,  sample.id = "PA0021-C")
 ```
 
 ## Estimating MOI with `binommix`
