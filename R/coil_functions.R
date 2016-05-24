@@ -115,8 +115,13 @@ getBarcodeVariants <- function(gdsfile, publication = "Volkman2008") {
 }
 
 #' Generate GenomicRanges object from GDS file
+#' 
+#' @param publication a character string indicating malaria publication (default Volkmann2008)
+#' @importFrom GenomicRanges makeGRangesFromDataFrame
 #' @details Return a GenomicRanges object containing Pf barcode information from Volkmann, 2008.
+#' @export
 barcodes <- function(publication) {
+    
     if(publication == "Volkman2008"){
         volkman.data <- matrix(c("Pf_01_000130573",1,130573, "Pf_01_000539044",1,539044,
                                  "Pf_02_000842803",2,842803,"Pf_04_000282592",4,282592,
