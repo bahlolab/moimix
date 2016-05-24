@@ -24,7 +24,6 @@
 #'  error.counts an n.samples by n.snps matrix containing number of error reads 
 #' @importFrom MCMCpack rdirichlet
 #' @importFrom BiocParallel bplapply
-#' @importFrom dplyr bind_rows
 #' @export
 simulateMOI <- function(n.samples, n.snps, moi, mean_coverage, error_coverage,
                          pi.true = NULL, mu.true = NULL) {
@@ -70,13 +69,13 @@ simulateMOI <- function(n.samples, n.snps, moi, mean_coverage, error_coverage,
     
     # step 1, generate underlying parameters from dirichlet prior
     if (is.null(pi.true)) {
-        pi.true <- t(MCMCpack::rdirichlet(n.samples, 
+        pi.true <- t(rdirichlet(n.samples, 
                                           alpha = 2^(1:moi)))
         
     }
     
     if (is.null(mu.true)) {
-        mu.true <- t(MCMCpack::rdirichlet(n.samples, 
+        mu.true <- t(rdirichlet(n.samples, 
                                           alpha = 2^(1:moi)))
     }
     # generate mixture indexes for each SNV for each isolate
@@ -131,4 +130,23 @@ simulateMOI <- function(n.samples, n.snps, moi, mean_coverage, error_coverage,
                 read.counts.all = read.counts.all,
                 snv.observed = snv.observed))
     
+}
+
+#' Generate iid  binomial mixture random variables 
+#' for testing EM implementation
+#' 
+#' @param n number of realisations
+#' @param N number of trials
+#' @param k number of components
+#' @param mu true mixture components
+#' @param pi true mixture weights
+sampleMM <- function(n, N, k, mu, pi) {
+    # assert that pi and mu must have length k
+    stopifnot(length(pi) == k)
+    stopifnot(length(mu) == k)
+    # generate true hidden states
+    states <- sample.int(k, size = n, replace = TRUE, prob = pi)
+    # sample from binomial according to states
+    observations <- rbinom(n, size = N, prob = mu[states])
+    list(obs = observations, states = states)
 }
