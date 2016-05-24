@@ -44,38 +44,40 @@ bafMatrix <- function(gdsfile) {
 
 #' Plot bafMatrix object
 #' 
-#' @param baf a bafMatrix object
+#' @param x a bafMatrix object
 #' @param sample.id character name of sample to plot
 #' @param assignments integer vector of cluster memberships (NULL)
-#' @details plots the genome-wide signal of MOI within an isolate
+#' @param ... other parameters to pass to \code{\link[graphics]{plot}}
+#' @details Plots the genome-wide signal of MOI within an isolate from
+#' B-allele frequencies.
 #' @importFrom scales alpha
 #' @importFrom RColorBrewer brewer.pal
+#' @method plot bafMatrix
 #' @export
-plot.bafMatrix <- function(baf, sample.id, assignments = NULL, ...) {
-    if(!(sample.id %in% rownames(baf$baf_matrix))) {
+plot.bafMatrix <- function(x, sample.id, assignments = NULL, y = NULL, xlab = NULL, ylab = "SNV frequency", ylim = c(0,1), pch = 16, ...) {
+    if(!(sample.id %in% rownames(x$baf_matrix))) {
         stop("sample.id not present in bafMatrix object")
     }
     # order coords by chromosome, then position
-    coords_ordered <- baf$coords[order(baf$coords$chromosome, baf$coords$position), ]
+    coords_ordered <- x$coords[order(x$coords$chromosome, x$coords$position), ]
     breaks <- tapply(1:nrow(coords_ordered),
                      coords_ordered$chromosome, median)
+    bf <- x$baf_matrix[sample.id, as.character(coords_ordered$variant.id)]
     
     if(is.null(assignments)) {
-        bf <- baf$baf_matrix[sample.id, as.character(coords_ordered$variant.id)]
-        plot(bf, xaxt ="n", xlab = "", 
-             ylim = c(0,1), ylab = "SNV frequency", 
-             col = alpha("black", 0.5), pch = 16, ...)
+        plot(bf, xaxt ="n", xlab = xlab, 
+             ylim = ylim, ylab = ylab, 
+             col = alpha("black", 0.5), pch = pch, ...)
         axis(side = 1, at = breaks, labels = names(breaks), 
              las = 3, cex.axis = 0.6, ...)
     } else {
-        bf <- baf$baf_matrix[sample.id, as.character(coords_ordered$variant.id)]
         # remove missing values 
         memberships <- assignments[as.character(coords_ordered$variant.id)]
         stopifnot(length(bf) == length(assignments))
         color_clusters <- brewer.pal(length(unique(memberships)), "Paired")
-        plot(bf, xaxt ="n", xlab = "", 
-             ylim = c(0,1), ylab = "SNV frequency", 
-             col = alpha(color_clusters[memberships], 0.5), pch = 16, ...)
+        plot(bf, xaxt ="n", xlab = xlab, 
+             ylim = ylim, ylab = ylab, 
+             col = alpha(color_clusters[memberships], 0.5), pch = pch, ...)
         axis(side = 1, at = breaks, labels = names(breaks), 
              las = 3, cex.axis = 0.6, ...)
     }

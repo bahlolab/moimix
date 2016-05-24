@@ -16,23 +16,40 @@ processGATK <- function(gdsfile, ref.allele) {
     alt_index <- seq(2, nsnps, by = 2) # even index are alt counts
     
     if (is.null(ref.allele)) {
-        counts_matrix <- list(ref = read_counts[, ref_index],
-                              alt = read_counts[, alt_index])
+        counts_matrix <- list(ref = matrix(read_counts[, ref_index], 
+                                           nrow = length(sample.id),
+                                           ncol = length(ref_index),
+                                           dimnames = dimnames(read_counts)),
+                              alt = matrix(read_counts[, alt_index],
+                                           nrow = length(sample.id),
+                                           ncol = length(alt_index),
+                                           dimnames = dimnames(read_counts)))
         dimnames(counts_matrix$ref)$sample <-  dimnames(counts_matrix$alt)$sample <- sample.id
         dimnames(counts_matrix$ref)$variant <- dimnames(counts_matrix$alt)$variant <-  variant.id
         return(counts_matrix)
     }
     
     else if (ref.allele == 0L) {
-        dimnames(read_counts)$sample <- sample.id
-        dimnames(read_counts)$variant <- variant.id
-        return(read_counts[, ref_index])
+        counts_matrix <- matrix(read_counts[, ref_index], 
+                                nrow = length(sample.id),
+                                ncol = length(ref_index),
+                                dimnames = dimnames(read_counts))
+        dimnames(counts_matrix)$sample <- sample.id
+        dimnames(counts_matrix)$variant <- variant.id
+        return(counts_matrix)
     }
     
     else if (ref.allele == 1L) {
-        dimnames(read_counts)$sample <- sample.id
-        dimnames(read_counts)$variant <- variant.id
-        return(read_counts[, alt_index])
+        counts_matrix <- matrix(read_counts[, alt_index], 
+                                nrow = length(sample.id),
+                                ncol = length(alt_index),
+                                dimnames = dimnames(read_counts))
+        dimnames(counts_matrix)$sample <- sample.id
+        dimnames(counts_matrix)$variant <- variant.id
+        return(counts_matrix)
+        
+    } else {
+        stop("Invalid ref.allele argument must be 0 or 1.")
     }
 }
 
@@ -69,7 +86,7 @@ processVarscan <- function(gdsfile, ref.allele) {
 #' of matrices corresponding to the read counts of the reference and alternate
 #' alleles respectively, while if \code{ref.allele = 0L} or \code{ref.allele = 1L}
 #' the function returns a  matrix corresponding the reference or alternate
-#' read counts. Currently, the AD tag formats from varscan and GATK
+#' read counts. Currently, the AD tag formats from varscan2re and GATK
 #' are supported.
 #' @return an alleleCounts matrix object, which is a list containg the 
 #' @importFrom SeqArray seqSummary
@@ -77,7 +94,7 @@ processVarscan <- function(gdsfile, ref.allele) {
 alleleCounts <- function(gdsfile) {
     # I/O checks
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
-    vars <-seqSummary(isolates, check="none", verbose=FALSE)$format$ID
+    vars <-seqSummary(gdsfile, check="none", verbose=FALSE)$format$ID
     
     # GATK will have just AD but no RD
     if("AD" %in% vars && !("RD" %in% vars))  {
@@ -91,7 +108,7 @@ alleleCounts <- function(gdsfile) {
     else {
         stop("No valid annotation/format tag to compute allele counts matrix")
     }
-    counts_matrix$dosage <- getDosage(isolates)
+    counts_matrix$dosage <- getDosage(gdsfile)
     structure(counts_matrix, class="alleleCounts")
 }
 
