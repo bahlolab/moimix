@@ -2,9 +2,15 @@
 % Please edit documentation in R/truncated_distributions.R
 \name{dtexp}
 \alias{dtexp}
+\alias{lltexp}
+\alias{mleTexp}
 \title{Truncated exponential distrubition}
 \usage{
 dtexp(x, theta, lower, upper)
+
+lltexp(x, theta, lower, upper)
+
+mleTexp(x, lower, upper)
 }
 \arguments{
 \item{x}{numeric vector}
@@ -16,5 +22,15 @@ dtexp(x, theta, lower, upper)
 \description{
 Density function for random generation for
 truncated exponential distribution
+
+Derivate of log-likelihood
+
+MLE for truncated exponential
 }
+\section{Functions}{
+\itemize{
+\item \code{lltexp}: Truncated exponential distrubition
+
+\item \code{mleTexp}: Truncated exponential distrubition
+}}
 

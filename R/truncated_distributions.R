@@ -27,6 +27,7 @@ dtexp <- function(x, theta, lower, upper) {
 # Reference: http://www.science.org.ge/moambe/7-1/Lominashvili-21-24.pdf
 # derivative of log-likelihood
 #' Derivate of log-likelihood
+#' @describeIn dtexp Truncated exponential distrubition
 #' @export
 lltexp <- function(x, theta, lower, upper) {
   lower.exp <- exp(-lower * theta)
@@ -36,6 +37,7 @@ lltexp <- function(x, theta, lower, upper) {
 }
 
 #' MLE for truncated exponential
+#' @describeIn dtexp Truncated exponential distrubition
 #' @export
 mleTexp <- function(x, lower, upper) {
   if(mean(x) > (lower + upper) / 2) {
@@ -79,7 +81,7 @@ rtexp <- function(n, theta, t) {
 #' random generation for the truncated Beta distribution with parameters
 #' shape1 and shape2 (and optional truncation bounds)
 #'
-#' @param x,q vector of quantiles
+#' @param x vector of quantiles
 #' @param shape1,shape2 non-negative parameters of Beta distributions
 #' @param lower,upper bounds for truncation
 #' @export

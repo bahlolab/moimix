@@ -12,7 +12,7 @@
 #' @export
 getMAF <- function(gdsfile) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
-    vars <- seqSummary(isolates, check="none", verbose=FALSE)$format$ID
+    vars <- seqSummary(gdsfile, check="none", verbose=FALSE)$format$ID
     if(!("AD" %in% vars)) {
         stop("Must have annotaion/format/AD tag to compute minor allele frequencies")
     }
@@ -43,7 +43,7 @@ getMAF <- function(gdsfile) {
 getHeterozygosityBySample <- function(gdsfile) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     # estimate NRAF matrix, currently on GATK vcf file support
-    vars <- seqSummary(isolates, check="none", verbose=FALSE)$format$ID
+    vars <- seqSummary(gdsfile, check="none", verbose=FALSE)$format$ID
     if(!("AD" %in% vars)) {
         stop("Must have annotaion/format/AD tag to compute B-allele frequencies")
     }

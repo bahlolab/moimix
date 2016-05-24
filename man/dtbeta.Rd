@@ -13,7 +13,7 @@ ptbeta(x, shape1, shape2, lower = 0, upper = 1)
 rtbeta(n, shape1, shape2, lower = 0, upper = 1)
 }
 \arguments{
-\item{x, q}{vector of quantiles}
+\item{x}{vector of quantiles}
 
 \item{shape1, shape2}{non-negative parameters of Beta distributions}
 

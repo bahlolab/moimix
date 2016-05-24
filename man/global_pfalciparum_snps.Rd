@@ -10,7 +10,7 @@
   \item{Chromosome}{Chromosome}
   \item{Position}{Physical position of SNP}
   \item{snpName}{SNP identifier}
-  \item{Geme}{Gene name}
+  \item{Gene}{Gene name}
   \item{MAF_AFR}{Minor allele frequency in Africa}
   \item{MAF_SEA}{Minor allele frequency in South East Asia}
   \item{MAF_PNG}{Minor allele frequency in Papua New Guinea}

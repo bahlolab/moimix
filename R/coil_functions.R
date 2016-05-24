@@ -88,7 +88,7 @@ extractBarcode <- function(gdsfile, variant.id, barcode.file) {
 
 #' Helper functions for extracting variant IDs corresponding to previously published
 #' barcodes.
-#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDS}} object
+#' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
 #' @param publication a character string representing a publication
 #' @importFrom SeqArray granges
 #' @importFrom IRanges findOverlaps 

@@ -8,7 +8,7 @@ barcodes.}
 getBarcodeVariants(gdsfile, publication = "Volkman2008")
 }
 \arguments{
-\item{gdsfile}{a \code{\link[SeqArray]{SeqVarGDS}} object}
+\item{gdsfile}{a \code{\link[SeqArray]{SeqVarGDSClass}} object}
 
 \item{publication}{a character string representing a publication}
 }
