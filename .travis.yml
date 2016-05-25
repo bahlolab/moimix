@@ -1,8 +1,7 @@
 language: r
 r: bioc-release
 sudo: false
-cache: 
-    packages: true
+cache: packages
 
 warnings_are_errors: false
 
