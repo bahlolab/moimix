@@ -9,58 +9,26 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE, 
                       warning = FALSE, 
                       message = FALSE, 
-                      fig.path = "./figures/" )
+                      fig.path = "./figures/",
+                      cache.path = "./cache/")
 # libraries 
 library(ggplot2)
 library(dplyr)
-
-# # functions
-# read_coverage <- function(fin) {
-#     read.table(fin, header = TRUE, nrow = 1, stringsAsFactors = FALSE)
-# }
-# 
-# read_bs <- function(path) {
-#   sample.id <- gsub("(.*\\/)(PG[[:digit:]]{4}-C)(.*)", "\\2", path)
-#   read.table(paste0(path, "/fastqc_data_disassemble/_Basic_Statistics.txt"), 
-#                        stringsAsFactors = FALSE,
-#              header = TRUE) %>% 
-#     mutate(sample.id = sample.id)
-# }
-# 
-# read_bq <- function(path) {
-#   sample.id <- gsub("(.*\\/)(PG[[:digit:]]{4}-C)(.*)", "\\2", path)
-# 
-#   read.table(paste0(path, "/fastqc_data_disassemble/_Per_base_sequence_quality_Mean.txt"),
-#              stringsAsFactors = FALSE,
-#              header = TRUE) %>% mutate(sample.id = sample.id)
-# }
-# 
-# read_gc <- function(path) {
-#   sample.id <- gsub("(.*\\/)(PG[[:digit:]]{4}-C)(.*)", "\\2", path)
-# 
-#   g <- read.table(paste0(path, "/fastqc_data_disassemble/_Per_base_sequence_content_C.txt"), 
-#                   stringsAsFactors = FALSE,
-#                   header = TRUE)
-#   c <- read.table(paste0(path, "/fastqc_data_disassemble/_Per_base_sequence_content_G.txt"), 
-#                   stringsAsFactors = FALSE,
-#                   header = TRUE)
-#   gc <- left_join(c, g) %>% mutate(gc_content = G+C, sample.id = sample.id)
-#   gc
-# }
-
 ```
 # Introduction
 
 We have analysed 27 mixture isolates from lab-strains obtained from the 
-[Malaria Genomics Consortium](https://www.malariagen.net/data/pf3k-5) pilot
+[Malaria Genomics Project](https://www.malariagen.net/data/pf3k-5) pilot
 data release version 5. These samples contain mixtures of lab-strains, 3D7,
 Dd2, HB3, and 7G8 in varying proportions. There are at most three mixtures of
 different strains. They were sequenced by Dr Jason Wendler
 at the Wellcome Trust Sanger Institute and can be found at the European Nucleotide
-Archive under study accession [PRJEB4338](http://www.ebi.ac.uk/ena/data/view/PRJEB4338). 
+Archive under study accession [PRJEB4338](http://www.ebi.ac.uk/ena/data/view/PRJEB4338).
+We have also included 5 other single clonal strains from the Pf3k release for
+validation.
 
 ```{r metadata}
-sample_info <- read.table("../metadata/pf3k_release_5_mixtures_metadata.txt",
+sample_info <- read.table("pf3k_release_5_mixtures_metadata.txt",
                           header = TRUE,
                           stringsAsFactors = FALSE) %>% 
   mutate(MOI = ((X3D7>0)+(Dd2>0)+(HB3>0)+(X7G8>0)))
@@ -71,6 +39,7 @@ knitr::kable(sample_info %>%
              caption = "Sample MOI and mixture proportions.")
 
 ```
+
 # Assessing clonality using biallelic SNPs
 
 We have performed analysed the mixture isolates by combining variant calls obtained
