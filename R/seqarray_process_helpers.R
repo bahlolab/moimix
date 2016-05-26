@@ -42,7 +42,7 @@ perSiteCoverage <- function(gdsfile) {
     # estimate NRAF matrix, currently on GATK vcf file support
     vars <- seqSummary(gdsfile, check="none", verbose=FALSE)$format$ID
     if(!("AD" %in% vars)) {
-        stop("Must have annotation/format/AD tag to compute B-allele frequencies")
+        stop("gdsfile must have annotation/format/AD tag to compute coverage")
     }
     
     seqApply(gdsfile, "annotation/format/AD", 
@@ -61,15 +61,73 @@ perSiteAlleleCoverage <- function(gdsfile) {
     # estimate NRAF matrix, currently on GATK vcf file support
     vars <- seqSummary(gdsfile, check="none", verbose=FALSE)$format$ID
     if(!("AD" %in% vars)) {
-        stop("Must have annotation/format/AD tag to compute B-allele frequencies")
+        stop("gdsfile must have annotation/format/AD tag to compute ")
     }
     
-    matrix(seqApply(gdsfile, "annotation/format/AD", 
+    matrix(unlist(seqApply(gdsfile, "annotation/format/AD", 
              function(x) colSums(x, na.rm = TRUE), 
              margin = "by.variant", 
-             as.is = "list"), ncol = 2, byrow = TRUE)
+             as.is = "list")), ncol = 2, byrow = TRUE)
     
 }
+
+#'Compute the proportion of samples covered up any number of bases
+#'
+#'@param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
+#'@param threshold integer lower bound for coverage  
+#'@return a vector of length equal to number of variants with
+#'the proportion of samples covered up to threshold
+#'@importFrom SeqArray seqSummary seqApply seqGetData
+#'@export
+perSiteCoverageBySample <- function(gdsfile, threshold) {
+    # i/o checks
+    stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
+    stopifnot(is.integer(threshold) && is.finite(threshold))
+    vars <- seqSummary(gdsfile, check="none", verbose=FALSE)$format$ID
+    if(!("AD" %in% vars)) {
+        stop("gdsfile must have annotation/format/AD tag to compute ")
+    }
+    
+    # this will produce the depth for each sample at the site
+    # i.e. rowSums then sum the number above the threshold
+    # then scale by the number of samples
+    n.samples <- length(seqGetData(gdsfile, "sample.id"))
+    
+    seqApply(gdsfile, "annotation/format/AD",
+             function(x) sum(rowSums(x) > threshold) / n.samples,
+             margin = "by.variant",
+             as.is = "double")
+    
+}
+
+#' Compute proportion of SNPs covered up to a lower bound of bases within 
+#' each sample.
+#'@param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
+#'@param threshold integer lower bound for coverage  
+#'@return a vector of length equal to number of samples with
+#'the proportion of SNPs covered up to threshold
+#'@importFrom SeqArray seqSummary seqApply seqGetData
+#'@export
+perSiteCoverageBySNP <- function(gdsfile, threshold) {
+    # i/o checks
+    stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
+    stopifnot(is.integer(threshold) && is.finite(threshold))
+    vars <- seqSummary(gdsfile, check="none", verbose=FALSE)$format$ID
+    if(!("AD" %in% vars)) {
+        stop("gdsfile must have annotation/format/AD tag to compute ")
+    }
+    # generate per sample coverage using rowSums(x) for each variant
+    # that is greater than threshold 
+    # Reduce will over the lists in place then scale  by number of variants.
+    n.variants <- length(seqGetData(gdsfile, "variant.id"))
+    Reduce("+", 
+           seqApply(gdsfile, "annotation/format/AD",
+                    function(x) rowSums(x) > threshold,
+                    margin = "by.variant",
+                    as.is = "list")) / n.variants
+    
+}
+
 #' Get major allele calls for isolates from BAF matrix
 #' 
 #' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object

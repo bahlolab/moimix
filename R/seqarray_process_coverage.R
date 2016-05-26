@@ -114,6 +114,9 @@ alleleCounts <- function(gdsfile) {
 
 #' sum number of samples/snps meeting coverage threshold scaled by total number
 #' of SNPs/proportions
+#' @param x integer vector of read counts
+#' @param threshold integer lower bound for coverage
+#' @param scale integer to scale results. 
 scaledProportion <- function(x, threshold, scale) {
     sum(x > threshold, na.rm = TRUE)/ scale
 }
