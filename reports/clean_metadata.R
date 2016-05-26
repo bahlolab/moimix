@@ -10,6 +10,8 @@ mgen_mixtures_only <- mgen_all %>%
     select(sample, acc, bases, bases_mapped, bases_duplicated,
            mean_coverage, mean_fragment_size, sd_fragment_size, `%callable` )
 
+write_rds(mgen_all,
+          "processed_data/mgen_clean.rds")
 # read in mixture metadata
 mgen_mix <- read_tsv("raw_data/pf3k_release_5_mixtures_metadata.txt")
 

@@ -1,0 +1,222 @@
+---
+title: "Processing Malaria Genomics Project Pf3k v5"
+author: "Stuart Lee"
+date: "`r Sys.date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+# Description: Estimate MAF and determine global minor allele frequencies
+# of polymorphisms. Apply coverage threshold and write out MAF estimates,
+# heterozygosity estimates, create final mixture GDS file.
+devtools::install_github("bahlolab/moimix")
+```
+
+# Introduction
+
+Here we preprocess the Malaria Genomics Project Pf3k project data
+for both IBD analysis within `isoRelate` and to construct a processed ground 
+truth data set using the known mixture clones present in the data. 
+
+Up to this point the following steps have been applied to the VCF files
+obtained from Pf3k website.
+
+For each chromosome VCF file we applied the following filters using `vcftools`:
+
+* Remove indels
+* Keep only biallelic single nucleotide variants on 14 nuclear chromosomes.
+* Remove variants if they lie in a Subtelomeric hypervariable or repeat region, 
+or in an internal hypervariable or centromer region.
+* Remove variants with a log odds score of being true variant versus a false
+ variant of 0 or less. (Following the Malaria Genomics guidelines)
+
+After we have processed each chromosome VCF we concatenate them together.
+
+```{bash process-vcf, eval = FALSE}
+set -e
+vcfdir=/path/to/malaria_gen5/vcf_files
+outdir=./raw_data/
+tempdir=~/tmp/
+# step 1, select only SNPs + VQSLOD > 0, regiontype = core
+vcf_chrom=$(find $vcfdir -regex ".*\.*[0-9][0-9]_v3.*.vcf.gz" | sort -u)
+
+for chr in $vcf_chrom 
+do
+	(stem=$(basename $chr .vcf.gz)
+	echo $stem
+	vcftools --gzvcf $chr \
+	--remove-indels \
+	--min-alleles  2 \
+	--max-alleles 2 \
+	--remove-filtered-all \
+	--recode \
+	--recode-INFO-all \
+	--stdout | bgzip -c > ${tempdir}${stem}.vcf.gz 
+	tabix -p vcf ${tempdir}${stem}.vcf.gz) &
+
+done
+wait
+
+filtered_vcf=$(find $tempdir -name "*.vcf.gz" | sort -u)
+
+bcftools concat -Oz -o ${outdir}malaria_gen5_biallelic_snps.vcf.gz $filtered_vcf
+```
+
+Then we convert the VCF to the GDS format keeping only the tags of interest.
+```{r, eval=FALSE}
+library(SeqArray)
+vcf_file <- "raw_data/malaria_gen5_biallelic_snps.vcf.gz"
+
+vcf_header <- seqVCF_Header(vcf_file)
+
+# recode header format for AD from R to .
+vcf_header$format$Number[vcf_header$ID == "AD"] <- "."
+
+# info columns to keep
+info.import <- c("AC", "AF", "AN", "BaseQRankSum", "ClippingRankSum",
+                 "DP", "FS", "InbreedingCoeff", "MQ", "MQRankSum",
+                 "QD", "ReadPosRankSum",
+                 "SOR", "VQSLOD", "SNPEFF_AMINO_ACID_CHANGE",
+                 "SNPEFF_CODON_CHANGE", "SNPEFF_EFFECT", "SNPEFF_EXON_ID",
+                 "SNPEFF_FUNCTIONAL_CLASS", "SNPEFF_GENE_BIOTYPE", 
+                 "SNPEFF_GENE_NAME", "SNPEFF_IMPACT", "SNPEFF_TRANSCRIPT_ID")
+
+# format columns to keep
+fmt.info <- c("AD", "DP", "GQ", "GT", "PL", "PGT",  "PID")
+
+seqVCF2GDS(vcf_file, "processed_data/malaria_gen5.gds",
+           header = vcf_header, 
+           info.import = info.import, 
+           fmt.import = fmt.info)
+```
+
+We now are ready to use the GDS file for analysis in R.
+```{r load-vcf}
+suppressPackageStartupMessages(library(SeqArray))
+suppressPackageStartupMessages(library(dplyr))
+mgen <- seqOpen("processed_data/malaria_gen5.gds")
+
+```
+
+The final variant set consists of `r length(seqGetData(mgen, "chromosome"))` 
+SNVs segregating by chromosome as follows:
+```{r init-counts}
+knitr::kable(data.frame(chr = seqGetData(mgen, "chromosome") ) 
+             %>% count(chr),
+             caption = "SNV counts by chromosome")
+
+```
+
+We have also processed the sample metadata to see how the samples segregate
+by geography. Samples with missing country variable correspond to the lab-strains
+from the complexity of infection and genetic crosses study.
+
+```{r load-meta}
+# load metadata 
+library(readr)
+mgen_meta <- read_rds("processed_data/mgen_clean.rds")
+field_isolates <- mgen_meta %>% 
+    filter(!is.na(country))
+
+```
+
+There are `r nrow(field_isolates)` total field isolates and the dataset
+can be broadly grouped into three broader geographic locations: 
+
+1. West Africa: Senegal, The Gambia, Guinea, Mali, Ghana, Nigeria
+2. Central Africa: DR Congo, Malawi
+3. South-east Asia: Bangladesh, Cambodia, Vietnam, Thailand, Myanmar, Laos
+
+```{r add-country-labels}
+west_africa <- c("The Gambia", "Ghana", "Guinea", "Mali", "Nigeria", "Senegal")
+central_africa <- c("DR of the Congo", "Malawi")
+se_asia <- c("Bangladesh", "Cambodia", "Laos", "Myanmar", "Thailand", "Vietnam")
+
+field_isolates$region <- NA
+field_isolates$region[field_isolates$country %in% west_africa] <- "West Africa"
+field_isolates$region[field_isolates$country %in% central_africa] <- "Central Africa"
+field_isolates$region[field_isolates$country %in% se_asia] <- "SE Asia"
+
+knitr::kable(field_isolates %>% count(region, country, site))
+
+```
+
+# Additional sample and SNP filtering
+Prior to estimating the minor allele frequencies and obtaining a final set
+of SNPs and samples. We need to ensure we are confident in the SNP set we have
+obtained and that samples are of high-quality. Although these samples
+have been processed by there still might be samples that are poorly genotyped
+and SNVs that aren't polymorphic globally or within the subpopulations.
+
+To do this we look at the empirical cumulative distribution functions (ECDF) at:
+
+* SNPs covered to x bases at different thresholds where x=5, 7, 10
+* Samples where the proportion of SNPs covered to x bases at different thresholds
+where x=5,7,10 
+
+We also look that various quality metrics provided by the Haplotype Caller
+for variant annotated in the VCF files. Of particular interest is the QD 
+MQRanksum
+
+```{r snp-missingess}
+library(moimix)
+# filter based on field samples
+seqSetFilter(mgen, sample.id = field_isolates$sample)
+
+# sample coverage 
+sample_5x <- perSiteCoverageBySNP(mgen, 5L)
+sample_10x <- perSiteCoverageBySNP(mgen, 10L)
+sample_20x <- perSiteCoverageBySNP(mgen, 20L)
+
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9")
+
+plot(ecdf(sample_5x),
+     col = cbbPalette[1],
+     xlab = "Proportion of samples",
+     ylab = "Cumulative proportion of SNPs",
+     main = "")
+lines(ecdf(sample_10x), col = cbbPalette[2])
+lines(ecdf(sample_20x), col = cbbPalette[3])
+0legend('left',  c('5x', '10x', '20x'), fill=cbbPalette, border=NA)
+
+```
+
+We see that using this approach we can see that more than 90\% of the SNPs have
+are covered to 5 bases in 90\% of samples. While 70\% of SNPs are covered up to
+10 bases in 90\% of samples and 
+
+```{r sample-missingness}
+
+# snp coverage by number of samples covered up to 5x, 10x, 10x
+snp_5x <- perSiteCoverageBySample(mgen, 5L)
+snp_10x <- perSiteCoverageBySample(mgen, 10L)
+snp_20x <- perSiteCoverageBySample(mgen, 20L)
+
+
+plot(ecdf(snp_5x),
+     col = cbbPalette[1], xlab = "Proportion of SNPs", 
+     ylab = "Proportion of samples",
+     main = "")
+lines(ecdf(snp_10x), col = cbbPalette[2])
+lines(ecdf(snp_20x), col = cbbPalette[3])
+legend('left', c('5x', '10x', '20x'), fill=cbbPalette, border=NA)
+
+```
+
+
+
+
+# Constructing known mixture strains set
+
+
+
+# References
+
+
+# Appendix
+```{r}
+seqClose(mgen)
+sessionInfo()
+```
+)
