@@ -7,6 +7,13 @@ of SNPs/proportions}
 \usage{
 scaledProportion(x, threshold, scale)
 }
+\arguments{
+\item{x}{integer vector of read counts}
+
+\item{threshold}{integer lower bound for coverage}
+
+\item{scale}{integer to scale results.}
+}
 \description{
 sum number of samples/snps meeting coverage threshold scaled by total number
 of SNPs/proportions
