@@ -6,7 +6,8 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, message = TRUE,
+                      cache.path = "./cache/", fig.path = "./figures/")
 # Description: Estimate MAF and determine global minor allele frequencies
 # of polymorphisms. Apply coverage threshold and write out MAF estimates,
 # heterozygosity estimates, create final mixture GDS file.
@@ -144,15 +145,17 @@ knitr::kable(field_isolates %>% count(region, country, site))
 # add metadata to GDS file
 # first reorder according to sample.id
 mgen_meta <- mgen_meta %>% arrange(sample)
+if(cnt.gdsn(index.gdsn(mgen, "sample.annotation")) != 4) {
+    add.gdsn(index.gdsn(mgen, "sample.annotation"),
+             name = "acc", val = mgen_meta$acc)
+    add.gdsn(index.gdsn(mgen, "sample.annotation"), 
+             name = "region", val =mgen_meta$region)
+    add.gdsn(index.gdsn(mgen, "sample.annotation"), 
+             name = "country",val = mgen_meta$country)
+    add.gdsn(index.gdsn(mgen, "sample.annotation"),
+             name = "site", val = mgen_meta$site)
+}
 
-add.gdsn(index.gdsn(mgen, "sample.annotation"),
-         name = "acc", val = mgen_meta$acc)
-add.gdsn(index.gdsn(mgen, "sample.annotation"), 
-         name = "region", val =mgen_meta$region)
-add.gdsn(index.gdsn(mgen, "sample.annotation"), 
-         name = "country",val = mgen_meta$country)
-add.gdsn(index.gdsn(mgen, "sample.annotation"),
-         name = "site", val = mgen_meta$site)
 
 ```
 
@@ -172,57 +175,6 @@ where x=5,7,10
 We also look that various quality metrics provided by the Haplotype Caller
 for variant annotated in the VCF files. Of particular interest is the QD 
 MQRanksum, and SOR tags. 
-
-```{r snp-missingess}
-library(moimix)
-# filter based on field samples
-seqSetFilter(mgen, sample.id = field_isolates$sample)
-
-# sample coverage 
-sample_5x <- perSiteCoverageBySNP(mgen, 5L)
-sample_10x <- perSiteCoverageBySNP(mgen, 10L)
-sample_20x <- perSiteCoverageBySNP(mgen, 20L)
-
-cbbPalette <- c("#000000", "#E69F00", "#56B4E9")
-
-plot(ecdf(sample_5x),
-     col = cbbPalette[1],
-     xlab = "Proportion of samples",
-     ylab = "Cumulative proportion of SNPs",
-     main = "")
-lines(ecdf(sample_10x), col = cbbPalette[2])
-lines(ecdf(sample_20x), col = cbbPalette[3])
-legend('left',  c('5x', '10x', '20x'), fill=cbbPalette, border=NA)
-
-```
-From the ECDF coverage plots we find that more than 90\% of samples are 
-have at least 90\% of theirs SNPs covered to 5 bases. Moreover, 90\% of samples
-have at least 70\% of their SNPs covered to 10 bases and 90\% of samples have at
-least 60\% of their SNPs covered by 20 bases.
-
-
-```{r sample-missingness}
-
-# snp coverage by number of samples covered up to 5x, 10x, 10x
-snp_5x <- perSiteCoverageBySample(mgen, 5L)
-snp_10x <- perSiteCoverageBySample(mgen, 10L)
-snp_20x <- perSiteCoverageBySample(mgen, 20L)
-
-
-plot(ecdf(snp_5x),
-     col = cbbPalette[1], xlab = "Proportion of SNPs", 
-     ylab = "Proportion of samples",
-     main = "")
-lines(ecdf(snp_10x), col = cbbPalette[2])
-lines(ecdf(snp_20x), col = cbbPalette[3])
-legend('left', c('5x', '10x', '20x'), fill=cbbPalette, border=NA)
-
-```
-
-Similarly, from the ECDF coverage plots we see that more than 90\% of the SNPs 
-are covered to at least 5 bases in 90\% of samples. 
-While 60\% of SNPs are covered up to 10 bases in 90\% of samples and 30\% of SNP
-s are covered up to 20 bases in 90\% of the samples.
 
 ```{r tag-ecdf}
 library(ggplot2)
@@ -257,12 +209,64 @@ for the alternate allele is low compared to the reference allele. The QD distrib
 is relatively symmetric and centered at around 20, most variants have relatively
 good ratios of  average quality to average depth. The SOR tag is an odds
 ratio score to detect strand bias from a 2 x 2 contingency table using the strands
-and alt/ref allele counts as the rows and columns respectively. 
+and alt/ref allele counts as the rows and columns respectively.
 
+```{r snp-missingess, cache=TRUE}
+# filter based on field samples
+# filter based on qd > 20, sor > 1, mqrank > -2 
+v_ids <- (gatk_df %>% filter(qd > 20, sor > 1 | is.na(sor), mqrank > -2 | is.na(mqrank)))$variant.id
+seqSetFilter(mgen, sample.id = field_isolates$sample, variant.id = v_ids)
+
+# sample coverage 
+sample_5x <- perSiteCoverageBySNP(mgen, 5L)
+sample_10x <- perSiteCoverageBySNP(mgen, 10L)
+sample_20x <- perSiteCoverageBySNP(mgen, 20L)
+
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9")
+
+plot(ecdf(sample_5x),
+     col = cbbPalette[1],
+     xlab = "Proportion of samples",
+     ylab = "Cumulative proportion of SNPs",
+     main = "")
+lines(ecdf(sample_10x), col = cbbPalette[2])
+lines(ecdf(sample_20x), col = cbbPalette[3])
+legend('left',  c('5x', '10x', '20x'), fill=cbbPalette, border=NA)
+
+```
+From the ECDF coverage plots we find that more than 90\% of samples 
+have at least 90\% of theirs SNPs covered to 5 bases. Moreover, 90\% of samples
+have at least 70\% of their SNPs covered to 10 bases and 90\% of samples have at
+least 60\% of their SNPs covered by 20 bases.
+
+
+```{r sample-missingness, cache=TRUE}
+
+# snp coverage by number of samples covered up to 5x, 10x, 10x
+snp_5x <- perSiteCoverageBySample(mgen, 5L)
+snp_10x <- perSiteCoverageBySample(mgen, 10L)
+snp_20x <- perSiteCoverageBySample(mgen, 20L)
+
+
+plot(ecdf(snp_20x),
+     col = cbbPalette[1], xlab = "Proportion of SNPs", 
+     ylab = "Cumulative proportion of of samples",
+     main = "")
+lines(ecdf(snp_10x), col = cbbPalette[2])
+lines(ecdf(snp_20x), col = cbbPalette[3])
+legend('left', c('5x', '10x', '20x'), fill=cbbPalette, border=NA)
+
+```
+
+Similarly, from the ECDF coverage plots we see that more than 90\% of the SNPs 
+are covered to at least 5 bases in 90\% of samples. 
+While 60\% of SNPs are covered up to 10 bases in 90\% of samples and 30\% of SNP
+s are covered up to 20 bases in 90\% of the samples.
+ 
 Since for this analysis we are more interested in evaluating known variants
-we apply some hard filtering to this dataset:
+(i.e. true positive variants) we applied some hard filtering to this dataset:
 
-* select variants where at least 90% of SNPs are covered to at least 20 bases
+* select variants where at least 80% of SNPs are covered to at least 20 bases
 in all samples.
 * QD score > 15
 * SOR < 1
@@ -271,21 +275,17 @@ in all samples.
 covered by at least 5 reads.
 
 ```{r apply-filters}
+library(moimix)
+variant_filter <- v_ids[which(snp_20x > 0.8)]
 
-variant_filter <- cbind(gatk_df, snp_20x = snp_20x)
-
-id_to_keep <- (variant_filter %>% filter(qd > 20, 
-                                         sor < 1, 
-                                         (mqrank > -2 | is.na(mqrank)), 
-                                         snp_20x > 0.9))$variant.id
 
 samples_to_keep <- field_isolates$sample[which(sample_5x > 0.9)]
 
-seqSetFilter(mgen, sample.id = samples_to_keep, variant.id = id_to_keep)
+seqSetFilter(mgen, sample.id = samples_to_keep, variant.id = variant_filter)
 ```
 
 This leaves us with `r length(samples_to_keep)` samples and 
-`r length(id_to_keep)` variants. The samples segregate by region as follows:
+`r length(variant_filter)` variants. The samples segregate by region as follows:
 
 ```{r group-region}
 filtered_fi <- field_isolates %>% filter(sample %in% samples_to_keep)
@@ -293,12 +293,10 @@ knitr::kable(filtered_fi %>% count(region, country))
 ```
 
 And the variants segreagate by chromosome as follows:
-
 ```{r group-chr}
-variants_df <- variant_filter %>% 
-    filter(variant.id %in% id_to_keep) 
+coords <- getCoordinates(mgen)
 
-knitr::kable(variants_df %>% count(chr))
+knitr::kable(coords %>% count(chromosome))
 ```
 
 # Constructing three region specific data subsets
@@ -320,12 +318,12 @@ are polymorphic in that region.
 # get central africa IDs
 centr_afr <- seqGetData(mgen, "sample.id")[seqGetData(mgen, "sample.annotation/region") == "Central Africa"]
 # filter gds
-seqSetFilter(mgen, sample.id = centr_afr, variant.id = id_to_keep)
+seqSetFilter(mgen, sample.id = centr_afr, variant.id = variant_filter)
 
 # estimate MAF
 maf_ca <- getMAF(mgen)
 # remove variants that are not polymorphic at all in this region (MAF == 0)
-snp_ca <- id_to_keep[maf_ca > 0]
+snp_ca <- variant_filter[maf_ca > 0]
 
 seqSetFilter(mgen, sample.id = centr_afr, variant.id = snp_ca)
 # estimate Fws metric
@@ -336,7 +334,7 @@ moi_ca <- data.frame(sample = centr_afr, fws = fws_central_africa,
 hist(fws_central_africa, breaks = 100)
 
 extractPED(mgen, 
-           moi.estimates = moi_ca, 
+           moi.estimates = moi_ca$moi, 
            out.file = "processed_data/central_africa")
 seqSetFilter(mgen)
 
@@ -347,23 +345,23 @@ seqSetFilter(mgen)
 # get central africa IDs
 west_afr <- seqGetData(mgen, "sample.id")[seqGetData(mgen, "sample.annotation/region") == "West Africa"]
 # filter gds
-seqSetFilter(mgen, sample.id = centr_afr, variant.id = id_to_keep)
+seqSetFilter(mgen, sample.id = centr_afr, variant.id = variant_filter)
 
 # estimate MAF
 maf_wa <- getMAF(mgen)
 # remove variants that are not polymorphic at all in this region (MAF == 0)
-snp_wa <- id_to_keep[maf_ca > 0]
+snp_wa <- variant_filter[maf_ca > 0]
 
 seqSetFilter(mgen, sample.id = west_afr, variant.id = snp_ca)
 # estimate Fws metric
 fws_west_africa <- getFws(mgen)
-moi_ca <- data.frame(sample = west_afr, fws = fws_central_africa, 
+moi_wa <- data.frame(sample = west_afr, fws = fws_west_africa, 
                      moi = ifelse(fws_central_africa > 0.95, 1, 2))
 
 hist(fws_west_africa, breaks = 100)
 
 extractPED(mgen, 
-           moi.estimates = moi_ca, 
+           moi.estimates = moi_wa$moi, 
            out.file = "processed_data/west_africa")
 seqSetFilter(mgen)
 ```
@@ -372,31 +370,33 @@ seqSetFilter(mgen)
 # get central africa IDs
 se_asia <- seqGetData(mgen, "sample.id")[seqGetData(mgen, "sample.annotation/region") == "SE Asia"]
 # filter gds
-seqSetFilter(mgen, sample.id = centr_afr, variant.id = id_to_keep)
+seqSetFilter(mgen, sample.id = centr_afr, variant.id = variant_filter)
 
 # estimate MAF
 maf_sea <- getMAF(mgen)
 # remove variants that are not polymorphic at all in this region (MAF == 0)
-snp_wa <- id_to_keep[maf_sea > 0]
+snp_wa <- variant_filter[maf_sea > 0]
 
 seqSetFilter(mgen, sample.id = west_afr, variant.id = snp_sea)
 # estimate Fws metric
 fws_se_asia <- getFws(mgen)
-moi_sea <- data.frame(sample = west_afr, fws = fws_se_asia, 
+moi_sea <- data.frame(sample = se_asia, fws = fws_se_asia, 
                      moi = ifelse(fws_central_africa > 0.95, 1, 2))
 
 hist(fws_sea_asia, breaks = 100)
 
 extractPED(mgen, 
-           moi.estimates = moi_ca, 
+           moi.estimates = moi_sea$moi, 
            out.file = "processed_data/se_asia")
 
 ```
 
+# Save annotation sets
+
 # Appendix
 ```{r sessionInfo}
 seqClose(mgen)
-cleanup.gds(vcf_file)
+# cleanup.gds("processed_data/malaria_gen5.gds")
 
 sessionInfo()
 ```

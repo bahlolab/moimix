@@ -9,4 +9,6 @@ vignettes/*.html
 vignettes/*.md
 reports/raw_data/
 reports/processed_data/
+reports/cache/
+report/figures/
 reports/*.Rout
