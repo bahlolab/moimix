@@ -348,6 +348,7 @@ seqSetFilter(mgen)
 ```
 
 ## West Africa
+
 ```{r west-africa}
 # get central africa IDs
 west_afr <- seqGetData(mgen, "sample.id")[seqGetData(mgen, "sample.annotation/region") == "West Africa"]
@@ -374,7 +375,9 @@ plink_wa <- extractPED(mgen, moi.estimates = moi_wa$moi)
 write_rds(plink_wa, "processed_data/west_africa.rds")
 seqSetFilter(mgen)
 ```
+
 ## SE Asia
+
 ```{r se-asia}
 # get central africa IDs
 se_asia <- seqGetData(mgen, "sample.id")[seqGetData(mgen, 
@@ -394,10 +397,11 @@ fws_se_asia <- getFws(mgen)
 moi_sea <- data.frame(sample = se_asia, fws = fws_se_asia, 
                      moi = ifelse(fws_se_asia > 0.95, 1, 2))
 
-hist(fws_sea_asia, breaks = 100)
+hist(fws_se_asia, breaks = 100)
 
-extractPED(mgen, 
-           moi.estimates = moi_sea$moi)
+plink_sea <- extractPED(mgen, moi.estimates = moi_sea$moi)
+
+write_rds(plink_sea, "processed_data/se_asia.rds")
 
 seqSetFilter(mgen)
 ```
