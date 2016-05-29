@@ -16,7 +16,7 @@ devtools::install_github("bahlolab/moimix")
 
 # Introduction
 
-Here we preprocess the Malaria Genomics Project Pf3k project data
+Here we pre-process the Malaria Genomics Project Pf3k project data
 for both IBD analysis within `isoRelate` and to construct a processed ground 
 truth data set using the known mixture clones present in the data. 
 
@@ -28,7 +28,7 @@ For each chromosome VCF file we applied the following filters using `vcftools`:
 * Remove indels
 * Keep only biallelic single nucleotide variants on 14 nuclear chromosomes.
 * Remove variants if they lie in a Subtelomeric hypervariable or repeat region, 
-or in an internal hypervariable or centromer region.
+or in an internal hypervariable or centromere region.
 * Remove variants with a log odds score of being true variant versus a false
  variant of 0 or less. (Following the Malaria Genomics guidelines)
 
@@ -166,15 +166,10 @@ obtained and that samples are of high-quality. Although these samples
 have been processed by there still might be samples that are poorly genotyped
 and SNVs that aren't polymorphic globally or within the subpopulations.
 
-To do this we look at the empirical cumulative distribution functions (ECDF) at:
-
-* SNPs covered to x bases at different thresholds where x=5, 7, 10
-* Samples where the proportion of SNPs covered to x bases at different thresholds
-where x=5,7,10 
-
-We also look that various quality metrics provided by the Haplotype Caller
+We first look at the various quality metrics provided by the Haplotype Caller
 for variant annotated in the VCF files. Of particular interest is the QD 
 MQRanksum, and SOR tags. 
+
 
 ```{r tag-ecdf}
 library(ggplot2)
@@ -206,11 +201,21 @@ qualities over all samples. The distribution of MQRankSum scores (which is only
 computed at heterozygous sites) is centred at 0 with a fat right tail. For this
 tag only negative scores are useful since that indicates that the mapping quality
 for the alternate allele is low compared to the reference allele. The QD distribution
-is relatively symmetric and centered at around 20, most variants have relatively
+is relatively symmetric and centred at around 20, most variants have relatively
 good ratios of  average quality to average depth. The SOR tag is an odds
 ratio score to detect strand bias from a 2 x 2 contingency table using the strands
 and alt/ref allele counts as the rows and columns respectively.
 
+We apply some hard filters first before looking at coverage distributions,
+* QD score > 15
+* SOR < 1
+* MQRankSum > -2
+
+Next we look at the empirical cumulative distribution functions (ECDF) at:
+
+* SNPs covered to x bases at different thresholds where x=5, 7, 10
+* Samples where the proportion of SNPs covered to x bases at different thresholds
+where x=5,7,10 
 ```{r snp-missingess, cache=TRUE}
 # filter based on field samples
 # filter based on qd > 20, sor > 1, mqrank > -2 
@@ -268,9 +273,6 @@ Since for this analysis we are more interested in evaluating known variants
 
 * select variants where at least 80% of SNPs are covered to at least 20 bases
 in all samples.
-* QD score > 15
-* SOR < 1
-* MQRankSum > -2
 * select samples where samples have at least 90\% of their SNPs
 covered by at least 5 reads.
 
@@ -292,7 +294,7 @@ filtered_fi <- field_isolates %>% filter(sample %in% samples_to_keep)
 knitr::kable(filtered_fi %>% count(region, country))
 ```
 
-And the variants segreagate by chromosome as follows:
+And the variants segregate by chromosome as follows:
 ```{r group-chr}
 coords <- getCoordinates(mgen)
 
@@ -306,11 +308,13 @@ have high enough MAFs and to annotate samples that are putatively clonal.
 
 To do this we perform the following steps
 1. Subset the calls by geographic region defined above.
-2. Esitmate the $F_{ws}$ metric to annotate samples as either single clones 
-or multiple clone infections.
+2. Estimate the $F_{ws}$ metric to annotate samples as either single clones 
+or multiple clone infections. We use this for a quick proxy for multiple infections,
+before assessing this in more detail using `moimix`.
 3. Estimate the MAFs directly from read-count data and select variants that
 are polymorphic in that region. 
 
+We also save the PED and MAP file as an R objects to speed up write-out.
 
 ## Central Africa
 
@@ -325,6 +329,7 @@ maf_ca <- getMAF(mgen)
 # remove variants that are not polymorphic at all in this region (MAF == 0)
 snp_ca <- variant_filter[maf_ca > 0]
 
+hist(maf_ca[snp_ca], breaks = 100)
 seqSetFilter(mgen, sample.id = centr_afr, variant.id = snp_ca)
 # estimate Fws metric
 fws_central_africa <- getFws(mgen)
@@ -333,9 +338,10 @@ moi_ca <- data.frame(sample = centr_afr, fws = fws_central_africa,
 
 hist(fws_central_africa, breaks = 100)
 
-extractPED(mgen, 
-           moi.estimates = moi_ca$moi, 
-           out.file = "processed_data/central_africa")
+plink_ca <- extractPED(mgen, moi.estimates = moi_ca$moi)
+
+write_rds(plink_ca, "processed_data/central_africa.rds")
+
 seqSetFilter(mgen)
 
 ```
@@ -345,12 +351,13 @@ seqSetFilter(mgen)
 # get central africa IDs
 west_afr <- seqGetData(mgen, "sample.id")[seqGetData(mgen, "sample.annotation/region") == "West Africa"]
 # filter gds
-seqSetFilter(mgen, sample.id = centr_afr, variant.id = variant_filter)
+seqSetFilter(mgen, sample.id = west_afr, variant.id = variant_filter)
 
 # estimate MAF
 maf_wa <- getMAF(mgen)
 # remove variants that are not polymorphic at all in this region (MAF == 0)
 snp_wa <- variant_filter[maf_ca > 0]
+hist(maf_wa[snp_wa], breaks = 100)
 
 seqSetFilter(mgen, sample.id = west_afr, variant.id = snp_ca)
 # estimate Fws metric
@@ -358,26 +365,29 @@ fws_west_africa <- getFws(mgen)
 moi_wa <- data.frame(sample = west_afr, fws = fws_west_africa, 
                      moi = ifelse(fws_central_africa > 0.95, 1, 2))
 
+
 hist(fws_west_africa, breaks = 100)
 
-extractPED(mgen, 
-           moi.estimates = moi_wa$moi, 
-           out.file = "processed_data/west_africa")
+plink_wa <- extractPED(mgen, moi.estimates = moi_wa$moi)
+
+write_rds(plink_wa, "processed_data/west_africa.rds")
 seqSetFilter(mgen)
 ```
 ## SE Asia
 ```{r se-asia}
 # get central africa IDs
-se_asia <- seqGetData(mgen, "sample.id")[seqGetData(mgen, "sample.annotation/region") == "SE Asia"]
+se_asia <- seqGetData(mgen, "sample.id")[seqGetData(mgen, 
+                                                    "sample.annotation/region") == "SE Asia"]
 # filter gds
-seqSetFilter(mgen, sample.id = centr_afr, variant.id = variant_filter)
+seqSetFilter(mgen, sample.id = se_asia, variant.id = variant_filter)
 
 # estimate MAF
 maf_sea <- getMAF(mgen)
 # remove variants that are not polymorphic at all in this region (MAF == 0)
-snp_wa <- variant_filter[maf_sea > 0]
+snp_sea <- variant_filter[maf_sea > 0]
+hist(maf_sea[snp_sea], breaks = 100)
 
-seqSetFilter(mgen, sample.id = west_afr, variant.id = snp_sea)
+seqSetFilter(mgen, sample.id = se_asia, variant.id = snp_sea)
 # estimate Fws metric
 fws_se_asia <- getFws(mgen)
 moi_sea <- data.frame(sample = se_asia, fws = fws_se_asia, 
@@ -386,12 +396,35 @@ moi_sea <- data.frame(sample = se_asia, fws = fws_se_asia,
 hist(fws_sea_asia, breaks = 100)
 
 extractPED(mgen, 
-           moi.estimates = moi_sea$moi, 
-           out.file = "processed_data/se_asia")
+           moi.estimates = moi_sea$moi)
 
+seqSetFilter(mgen)
 ```
 
 # Save annotation sets
+We also save the variant annotations across all populations.
+
+```{r gene-ids}
+seqSetFilter(mgen, variant.id = variant_filter)
+
+annotations <- data.frame(chr = seqGetData(mgen, "chromosome"),
+                          pos = seqGetData(mgen, "position"),
+                          gene_name = seqGetData(mgen, "annotation/info/SNPEFF_GENE_NAME"),
+                          gene_biotype = seqGetData(mgen, "annotation/info/SNPEFF_GENE_BIOTYPE"),
+                          snp_effect = seqGetData(mgen, "annotation/info/SNPEFF_AMINO_ACID_CHANGE"),
+                          snp_functional_class = seqGetData(mgen, "annotation/info/SNPEFF_EFFECT"), 
+                          snp_aa_change = seqGetData(mgen, "annotation/info/SNPEFF_AMINO_ACID_CHANGE"),
+                          snp_codon_change = seqGetData(mgen, "annotation/info/SNPEFF_CODON_CHANGE"),
+                          exon_id = seqGetData(mgen, "annotation/info/SNPEFF_EXON_ID"),
+                          transcript_id = seqGetData(mgen, "annotation/info/SNPEFF_TRANSCRIPT_ID"))
+
+# counts
+knitr::kable(annotations %>% 
+                 count(snp_functional_class, gene_biotype))
+
+write_rds(annotations, "processed_data/snp_annotations_clean.rds")
+
+```
 
 # Appendix
 ```{r sessionInfo}

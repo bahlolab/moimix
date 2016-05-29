@@ -4,7 +4,8 @@
 \alias{extractPED}
 \title{Extract PED files from gds}
 \usage{
-extractPED(gdsfile, moi.estimates = NULL, use.hets = FALSE, out.file)
+extractPED(gdsfile, moi.estimates = NULL, use.hets = FALSE,
+  outfile = NULL)
 }
 \arguments{
 \item{gdsfile}{a \code{\link[SeqArray]{SeqVarGDSClass}} object}
@@ -14,7 +15,7 @@ for each sample. DEFAULT NULL}
 
 \item{use.hets}{FALSE include heterozygote genotypes}
 
-\item{out.file}{prefix of PLINK files for output}
+\item{outfile}{prefix of PLINK files for output (default NULL)}
 }
 \description{
 Extract PED files from gds
