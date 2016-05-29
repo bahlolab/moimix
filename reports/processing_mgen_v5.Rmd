@@ -96,6 +96,8 @@ We now are ready to use the GDS file for analysis in R.
 ```{r load-vcf}
 suppressPackageStartupMessages(library(SeqArray))
 suppressPackageStartupMessages(library(dplyr))
+suppressPacakgeStartupMessages(library(moimix))
+
 # use readonly = FALSE to add sample annotations
 mgen <- seqOpen("processed_data/malaria_gen5.gds", readonly = FALSE)
 
@@ -277,7 +279,6 @@ in all samples.
 covered by at least 5 reads.
 
 ```{r apply-filters}
-library(moimix)
 variant_filter <- v_ids[which(snp_20x > 0.8)]
 
 
@@ -359,7 +360,7 @@ maf_wa <- getMAF(mgen)
 snp_wa <- variant_filter[maf_ca > 0]
 hist(maf_wa[snp_wa], breaks = 100)
 
-seqSetFilter(mgen, sample.id = west_afr, variant.id = snp_ca)
+seqSetFilter(mgen, sample.id = west_afr, variant.id = snp_wa)
 # estimate Fws metric
 fws_west_africa <- getFws(mgen)
 moi_wa <- data.frame(sample = west_afr, fws = fws_west_africa, 
