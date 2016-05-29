@@ -201,7 +201,7 @@ callMajor <- function(gdsfile, get.nucleotides = FALSE, use.hets = FALSE) {
 #' @param moi.estimates a vector of MOI values obtained by \code{\link{binommix}} 
 #' for each sample. DEFAULT NULL
 #' @param use.hets FALSE include heterozygote genotypes
-#' @param out.file prefix of PLINK files for output
+#' @param outfile prefix of PLINK files for output (default NULL)
 #' @details This function writes a plink .ped and .map file for a given
 #' gdsfile. If moi.estimates is set then use.hets is redundant. It will set
 #' the sex in each the ped file to 2 if MOI > 1 and set heterozygote genotypes
@@ -211,13 +211,17 @@ callMajor <- function(gdsfile, get.nucleotides = FALSE, use.hets = FALSE) {
 #' are a large number of variants in the GDS file. 
 #' @importFrom SeqArray seqGetData seqApply
 #' @export
-extractPED <- function(gdsfile, moi.estimates = NULL, use.hets = FALSE, out.file) {
+extractPED <- function(gdsfile, moi.estimates = NULL, use.hets = FALSE, outfile = NULL) {
     # construct the ped file requires 6 columns
     # Family ID, Individual ID, Paternal ID, Maternal ID, Sex, Phenotype
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     stopifnot(is.logical(use.hets) && length(use.hets) == 1)
-    stopifnot(is.character(out.file) && length(out.file == 1))
+    if (!(is.null(outfile))) {
+        stopifnot(is.character(outfile) && length(outfile == 1))
+    }
+    
     sample.id <- seqGetData(gdsfile, "sample.id")
+    
     if (!is.null(moi.estimates) && length(moi.estimates) != length(sample.id)) {
         stop("Length of moi.estimates must match number of samples")
     }
@@ -246,11 +250,17 @@ extractPED <- function(gdsfile, moi.estimates = NULL, use.hets = FALSE, out.file
                  please filter before extracting PED file.")
         }
         
-        sites <- t(gt)
+        if(ncol(gt) != length(moi)) {
+            stop("Number of samples not equal to number of MOI estimates")
+        }
+        
+        # get dosage per sample
+        ds <- colSums(gt)
         # recode het calls as missing for MOI = 1
-        sites[moi.estimates == 1, 
-              sites[moi.estimates == 1, 1] != sites[moi.estimates == 1, 2]] <- NA
-        sites
+        recode_hets <- ds == 1 & moi == 1
+        
+        gt[ , recode_hets] <- NA
+        t(gt)
     }
     
     if (!is.null(moi.estimates)) {
@@ -280,10 +290,15 @@ extractPED <- function(gdsfile, moi.estimates = NULL, use.hets = FALSE, out.file
     gt_matrix[gt_matrix == 0] <- 1
     gt_matrix[is.na(gt_matrix)] <- 0
     
-    
-    ped_file <- paste0(out.file, ".ped")
     ped_data <- cbind(ped_meta, gt_matrix)
-    write.table(ped_data, ped_file, row.names = FALSE, col.names = FALSE, quote = FALSE)
+    if( !is.null(outfile) ) {
+        ped_file <- paste0(outfile, ".ped")
+        write.table(ped_data, ped_file, 
+                    row.names = FALSE, 
+                    col.names = FALSE, 
+                    quote = FALSE)
+    }
+
     
     # map file
     chr <- seqGetData(gdsfile, "chromosome")
@@ -293,9 +308,12 @@ extractPED <- function(gdsfile, moi.estimates = NULL, use.hets = FALSE, out.file
     genetic_distance <- pos / 17000
     map_data <- data.frame(chr, snp_id, genetic_distance, pos)
     
-    map_file <- paste0(out.file, ".map")
-    write.table(map_data, map_file, row.names = FALSE, col.names = FALSE, quote = FALSE)
-    
+    if( !is.null(outfile)) {
+        map_file <- paste0(outfile, ".map")
+        write.table(map_data, map_file, 
+                    row.names = FALSE, col.names = FALSE, quote = FALSE)
+    }
+
     # return list if the user assigns
     invisible(list(ped = ped_data, map = map_data))
 }
