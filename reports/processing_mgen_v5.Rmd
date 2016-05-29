@@ -364,7 +364,7 @@ seqSetFilter(mgen, sample.id = west_afr, variant.id = snp_wa)
 # estimate Fws metric
 fws_west_africa <- getFws(mgen)
 moi_wa <- data.frame(sample = west_afr, fws = fws_west_africa, 
-                     moi = ifelse(fws_central_africa > 0.95, 1, 2))
+                     moi = ifelse(fws_west_africa > 0.95, 1, 2))
 
 
 hist(fws_west_africa, breaks = 100)
@@ -392,7 +392,7 @@ seqSetFilter(mgen, sample.id = se_asia, variant.id = snp_sea)
 # estimate Fws metric
 fws_se_asia <- getFws(mgen)
 moi_sea <- data.frame(sample = se_asia, fws = fws_se_asia, 
-                     moi = ifelse(fws_central_africa > 0.95, 1, 2))
+                     moi = ifelse(fws_se_asia > 0.95, 1, 2))
 
 hist(fws_sea_asia, breaks = 100)
 
