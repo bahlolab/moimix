@@ -96,7 +96,7 @@ We now are ready to use the GDS file for analysis in R.
 ```{r load-vcf}
 suppressPackageStartupMessages(library(SeqArray))
 suppressPackageStartupMessages(library(dplyr))
-suppressPacakgeStartupMessages(library(moimix))
+suppressPackageStartupMessages(library(moimix))
 
 # use readonly = FALSE to add sample annotations
 mgen <- seqOpen("processed_data/malaria_gen5.gds", readonly = FALSE)
