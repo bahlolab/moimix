@@ -12,6 +12,9 @@ knitr::opts_chunk$set(echo = TRUE, message = TRUE,
 # of polymorphisms. Apply coverage threshold and write out MAF estimates,
 # heterozygosity estimates, create final mixture GDS file.
 devtools::install_github("bahlolab/moimix")
+out_file <-  c("processed_data/se_asia.rds", "processed_data/west_africa.rds", 
+               "processed_data/central_africa.rds", "processed_data/snp_annotations_clean.rds")
+eval_subsets <- all(file.exists(out_file) == TRUE)
 ```
 
 # Introduction
@@ -319,7 +322,7 @@ We also save the PED and MAP file as an R objects to speed up write-out.
 
 ## Central Africa
 
-```{r central-africa}
+```{r central-africa, eval = eval_subsets}
 # get central africa IDs
 centr_afr <- seqGetData(mgen, "sample.id")[seqGetData(mgen, "sample.annotation/region") == "Central Africa"]
 # filter gds
@@ -349,7 +352,7 @@ seqSetFilter(mgen)
 
 ## West Africa
 
-```{r west-africa}
+```{r west-africa, eval = eval_subsets}
 # get central africa IDs
 west_afr <- seqGetData(mgen, "sample.id")[seqGetData(mgen, "sample.annotation/region") == "West Africa"]
 # filter gds
@@ -378,7 +381,7 @@ seqSetFilter(mgen)
 
 ## SE Asia
 
-```{r se-asia}
+```{r se-asia, eval = eval_subsets}
 # get central africa IDs
 se_asia <- seqGetData(mgen, "sample.id")[seqGetData(mgen, 
                                                     "sample.annotation/region") == "SE Asia"]
@@ -409,7 +412,7 @@ seqSetFilter(mgen)
 # Save annotation sets
 We also save the variant annotations across all populations.
 
-```{r gene-ids}
+```{r gene-ids, eval = eval_subsets}
 seqSetFilter(mgen, variant.id = variant_filter)
 
 annotations <- data.frame(chr = seqGetData(mgen, "chromosome"),
@@ -431,7 +434,60 @@ write_rds(annotations, "processed_data/snp_annotations_clean.rds")
 
 ```
 
+
+# Extracting mixture data 
+
+To construct polymorphic markers for the known mixture strains we extract a set
+of high MAF and high heterzygous set of global markers from the global field
+isolate sets. 
+
+```{r mixture-step-1}
+seqSetFilter(mgen, sample.id = samples_to_keep, variant.id = variant_filter)
+
+maf_all <- getMAF(mgen)
+
+het_all <- getHeterozygosity(mgen)
+
+par(mfrow = c(2,1))
+hist(maf_all, breaks = 50)
+hist(het_all, breaks = 50)
+dev.off()
+```
+
+We see that as observed in the other populations the MAF distribution is
+biased to rare alleles. If we choose SNVs that are heterozygous, this
+should give us a cleaner signal for detecting MOI.
+
+```{r mixtures-step-2}
+mix_inform_snps <- variant_filter[maf_all > 0.05 && het_all > 0.1]
+
+# read in mixture metadata
+mixture <- read_rds("processed_data/mixtures_all.rds")
+
+seqSetFilter(mgen, variant.id = mix_inform_snps, sample.id = mixture$sample)
+
+```
+
+We also plot the BAF frequencies to see if the signal remains 
+
+```{r plot-baf}
+bf <- bafMatrix(mgen)
+
+for(sample in mixture$sample) {
+    plot(bf, sample)
+}
+
+```
+
+Finally, we export the mixture data to a GDS file and make it available to 
+`moimix`.
+
+```{r mixture-export}
+seqExport(mgen, "processed_data/mixtures_clean.gds")
+
+```
 # Appendix
+
 ```{r sessionInfo}
 seqClose(mgen)
 # cleanup.gds("processed_data/malaria_gen5.gds")
