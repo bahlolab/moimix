@@ -446,10 +446,11 @@ seqSetFilter(mgen, sample.id = samples_to_keep, variant.id = variant_filter)
 
 maf_all <- getMAF(mgen)
 
+
 het_all <- getHeterozygosity(mgen)
 
-hist(maf_all, breaks = 50)
-hist(het_all, breaks = 50)
+plot(ecdf(maf_all))
+plot(ecdf(het_all))
 
 ```
 
@@ -458,7 +459,7 @@ biased to rare alleles. If we choose SNVs that are heterozygous, this
 should give us a cleaner signal for detecting MOI.
 
 ```{r mixtures-step-2}
-mix_inform_snps <- variant_filter[maf_all > 0.05 & het_all > 0.05]
+mix_inform_snps <- variant_filter[maf_all > 0.01 & het_all > 0.01]
 
 # read in mixture metadata
 mixture <- read_rds("processed_data/mixtures_all.rds")
@@ -467,7 +468,8 @@ seqSetFilter(mgen, variant.id = mix_inform_snps, sample.id = mixture$sample)
 
 ```
 
-We also plot the BAF frequencies to see if the signal remains 
+We also plot the BAF frequencies to see if the signal remains in this
+reduced variant set.
 
 ```{r plot-baf}
 bf <- bafMatrix(mgen)
