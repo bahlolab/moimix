@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE, message = TRUE,
 devtools::install_github("bahlolab/moimix")
 out_file <-  c("processed_data/se_asia.rds", "processed_data/west_africa.rds", 
                "processed_data/central_africa.rds", "processed_data/snp_annotations_clean.rds")
-eval_subsets <- all(file.exists(out_file) == TRUE)
+eval_subsets <- all(file.exists(out_file) == FALSE)
 ```
 
 # Introduction
@@ -441,17 +441,16 @@ To construct polymorphic markers for the known mixture strains we extract a set
 of high MAF and high heterzygous set of global markers from the global field
 isolate sets. 
 
-```{r mixture-step-1}
+```{r mixture-step-1, fig.show='hold'}
 seqSetFilter(mgen, sample.id = samples_to_keep, variant.id = variant_filter)
 
 maf_all <- getMAF(mgen)
 
 het_all <- getHeterozygosity(mgen)
 
-par(mfrow = c(2,1))
 hist(maf_all, breaks = 50)
 hist(het_all, breaks = 50)
-dev.off()
+
 ```
 
 We see that as observed in the other populations the MAF distribution is
@@ -459,7 +458,7 @@ biased to rare alleles. If we choose SNVs that are heterozygous, this
 should give us a cleaner signal for detecting MOI.
 
 ```{r mixtures-step-2}
-mix_inform_snps <- variant_filter[maf_all > 0.05 && het_all > 0.1]
+mix_inform_snps <- variant_filter[maf_all > 0.05 & het_all > 0.05]
 
 # read in mixture metadata
 mixture <- read_rds("processed_data/mixtures_all.rds")
