@@ -489,6 +489,8 @@ seqExport(mgen, "processed_data/mixtures_clean.gds")
 # Appendix
 
 ```{r sessionInfo}
+# tidy up gds
+seqSetFilter(mgen)
 seqClose(mgen)
 # cleanup.gds("processed_data/malaria_gen5.gds")
 
