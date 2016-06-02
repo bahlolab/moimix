@@ -54,7 +54,7 @@ bafMatrix <- function(gdsfile) {
 #' @importFrom RColorBrewer brewer.pal
 #' @method plot bafMatrix
 #' @export
-plot.bafMatrix <- function(x, sample.id, assignments = NULL, y = NULL, xlab = NULL, ylab = "SNV frequency", ylim = c(0,1), pch = 16, ...) {
+plot.bafMatrix <- function(x, sample.id, assignments = NULL, y = NULL, xlab = "", ylab = "SNV frequency", ylim = c(0,1), pch = 16, ...) {
     if(!(sample.id %in% rownames(x$baf_matrix))) {
         stop("sample.id not present in bafMatrix object")
     }
