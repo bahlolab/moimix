@@ -40,6 +40,8 @@ getMAF <- function(gdsfile) {
 #' is 1 - (raf^2 + aaf^2) 
 #' @return a numeric matrix of size l by n where l is the number of samples
 #' and n is the number of SNPs.
+#' @importFrom SeqArray seqSummary seqApply
+#' @export
 getHeterozygosityBySample <- function(gdsfile) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     # estimate NRAF matrix, currently on GATK vcf file support
@@ -71,6 +73,7 @@ getHeterozygosityBySample <- function(gdsfile) {
 #' 
 #' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object 
 #' @note Need to update so population ids can be submitted.
+#' @export
 getHeterozygosity <- function(gdsfile) {
     # first compute MAF 
     maf <- getMAF(gdsfile)
