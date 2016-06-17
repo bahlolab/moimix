@@ -12,3 +12,5 @@ reports/processed_data/
 reports/cache/
 report/figures/
 reports/*.Rout
+reports/.dropbox
+reports/Icon*

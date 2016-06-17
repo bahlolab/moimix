@@ -276,13 +276,13 @@ s are covered up to 20 bases in 90\% of the samples.
 Since for this analysis we are more interested in evaluating known variants
 (i.e. true positive variants) we applied some hard filtering to this dataset:
 
-* select variants where at least 80% of SNPs are covered to at least 20 bases
+* select variants where at least 90% of SNPs are covered to at least 10 bases
 in all samples.
 * select samples where samples have at least 90\% of their SNPs
 covered by at least 5 reads.
 
 ```{r apply-filters}
-variant_filter <- v_ids[which(snp_20x > 0.8)]
+variant_filter <- v_ids[which(snp_10x > 0.9)]
 
 
 samples_to_keep <- field_isolates$sample[which(sample_5x > 0.9)]
@@ -304,6 +304,21 @@ coords <- getCoordinates(mgen)
 
 knitr::kable(coords %>% count(chromosome))
 ```
+
+We save the global dataset as follows by extracting genotype calls
+(setting the heterozygous calls to missing at the moment) and the allele counts.
+# Global data set
+```{r extract-global}
+ped_all <- extractPED(mgen, use.hets = FALSE)
+
+acounts <- alleleCounts(mgen)
+
+write_rds(ped_all, "processed_data/mgen_all_ped.rds")
+write_rds(acounts, "processed_data/mgen_all_allele_counts.rds")
+
+```
+
+
 
 # Constructing three region specific data subsets
 
