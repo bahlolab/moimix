@@ -18,11 +18,9 @@ getMAF <- function(gdsfile) {
     }
     
     maf <- function(x) {
-        
-        depth <- sum(x, na.rm = TRUE)
-        # frequency of ref and alt reads
+        # frequency of ref and alt reads over all samples
         coverage <- colSums(x, na.rm = TRUE)
-        min(coverage) / depth
+        pmin(coverage / sum(coverage))
     }
     res <- seqApply(gdsfile, "annotation/format/AD",
                     function(x) maf(x),
