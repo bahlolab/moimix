@@ -11,7 +11,9 @@ knitr::opts_chunk$set(echo = TRUE, message = TRUE,
 # Description: Estimate MAF and determine global minor allele frequencies
 # of polymorphisms. Apply coverage threshold and write out MAF estimates,
 # heterozygosity estimates, create final mixture GDS file.
+
 devtools::install_github("bahlolab/moimix")
+# change this line to run all region datasets
 out_file <-  c("processed_data/se_asia.rds", "processed_data/west_africa.rds", 
                "processed_data/central_africa.rds", "processed_data/snp_annotations_clean.rds")
 eval_subsets <- all(file.exists(out_file) == FALSE)
@@ -104,7 +106,6 @@ suppressPackageStartupMessages(library(moimix))
 # use readonly = FALSE to add sample annotations
 mgen <- seqOpen("processed_data/malaria_gen5.gds", readonly = FALSE)
 
-
 ```
 
 The final variant set consists of `r length(seqGetData(mgen, "chromosome"))` 
@@ -165,10 +166,11 @@ if(cnt.gdsn(index.gdsn(mgen, "sample.annotation")) != 4) {
 ```
 
 # Additional sample and SNP filtering
-Prior to estimating the minor allele frequencies and obtaining a final set
-of SNPs and samples. We need to ensure we are confident in the SNP set we have
-obtained and that samples are of high-quality. Although these samples
-have been processed by there still might be samples that are poorly genotyped
+Prior to estimating the minor allele frequencies within a region
+and obtaining a final set of SNPs and samples, we need to ensure we are 
+confident in the SNP set we have obtained and that samples are of high-quality. 
+Although these samples have been processed by there still might be samples 
+that are poorly genotyped
 and SNVs that aren't polymorphic globally or within the subpopulations.
 
 We first look at the various quality metrics provided by the Haplotype Caller
@@ -199,6 +201,11 @@ print(ggplot(gatk_df, aes(x = qd)) + stat_ecdf(),
 print(ggplot(gatk_df, aes(x =  sor)) + stat_ecdf(),
       vp =  viewport(layout.pos.row = 2, layout.pos.col = 2))
 
+# filter based on field samples
+# filter based on qd > 20, sor < 1, mqrank > -2 
+
+v_ids <- (gatk_df %>% filter(qd > 15, mq > 50, sor < 1,
+                             mqrank > -2 | is.na(mqrank)))$variant.id
 ```
 
 We see that all variants are supported by high residual mean square mapping
@@ -211,22 +218,110 @@ good ratios of  average quality to average depth. The SOR tag is an odds
 ratio score to detect strand bias from a 2 x 2 contingency table using the strands
 and alt/ref allele counts as the rows and columns respectively.
 
-We apply some hard filters first before looking at coverage distributions,
+We apply some hard filters to all samples,
 * QD score > 15
 * SOR < 1
-* MQRankSum > -2
+* MQRankSum > -2 (allowed to be missing for sites with heterozygous calls)
+* MQ > 50
 
-Next we look at the empirical cumulative distribution functions (ECDF) at:
+This leaves approximately `r length(v_ids)` SNVs. 
 
-* SNPs covered to x bases at different thresholds where x=5, 7, 10
-* Samples where the proportion of SNPs covered to x bases at different thresholds
-where x=5,7,10 
+Of the remaining SNVs we then split the data by country and 
+apply the following filters
+
+1. Extract SNVs that are covered to at least 5 bases in 90% of samples.
+2. Extract SNVs that are polymorphic in the country of interest.
+3. Find samples that have 90% of their SNVs covered to at least 5 bases
+4. Take intersect set of SNVs that meet criteria 1 and 2 within each country 
+across a region. Include samples that meet that criteria within a region. 
+5. Using the intersect set of SNVs and compute MAF distributions within each 
+country. 
+6. Apply a MAF filter of 1% within each country
+7. Take intersect set of SNPs that meet 6.) within each country accross a region.
+
+To do this we construct a nested list data structure of where that consist
+of three lists per region and lists containing the following for each country:
+  
+  * sample identifiers meeting our criteria
+  * SNP identifiers meeting our criteria
+  * Fws estimates
+  * MAF estimates
+
+```{r snp-distributions}
+mgen_stats <- list()
+
+for (location in unique(field_isolates$region)) {
+  mgen_stats[[location]] <- list()
+  country_unique <- unique(field_isolates$country[field_isolates$region == location])
+  for (country in country_unique) {
+    mgen_stats[[location]][[country]] <- list()
+    # apply filter first pass
+    samples <- field_isolates$sample[field_isolates$country == country]
+    # filter first
+    seqSetFilter(mgen, sample.id = samples, variant.id = v_ids)
+    # SNVs covered to 5 bases overall samples in country
+    # first pass at computing MAF
+    maf_init <- getMAF(mgen)
+    # exclude variants that have MAF <= 0 and snp_5x < 0.9
+    variants_step1 <- v_ids[maf_init > 0]
+    seqSetFilter(mgen, variant.id = variants_step1)
+    
+    snp_5x <- perSiteCoverageBySample(mgen, 5L)
+    variants_step2 <- variants_step1[snp_5x > 0.9]
+    seqSetFilter(mgen, variant.id = variants_step2)
+    
+    # sample exclusions
+    sample_5x <- perSiteCoverageBySNP(mgen, 5L)
+    # samples to keep
+    samples_step1 <- samples[sample_5x >= 0.9]
+    
+    seqSetFilter(mgen, sample.id = samples_step1, variant.id = variants_step2)
+    # maf final
+    maf_final <- getMAF(mgen)
+    variants_step3 <- seqGetData(mgen, "variant.id")
+    # estimate Fws on subset region
+    # fws_final 
+    fws_final <- getFws(mgen)
+    
+    maf_filter <- variants_step3[maf_final > 0.01] 
+    # collect data 
+    mgen_stats[[location]][[country]]$samples <- samples_step1
+    mgen_stats[[location]][[country]]$snps <- maf_filter
+    mgen_stats[[location]][[country]]$fws <- fws_final
+    # create plots
+    par(mfrow = c(2,2))
+    
+    plot(ecdf(snp_5x),
+     xlab = "Proportion of SNPs", 
+     ylab = "Cumulative proportion of of samples",
+     main = paste("ECDF coverage at 5x for", country))
+    
+    plot(ecdf(sample_5x),
+     xlab = "Proportion of samples",
+     ylab = "Cumulative proportion of SNPs",
+     main= paste("ECDF coverage at 5x for", country))
+    
+    plot(ecdf(maf_final), breaks = 100,
+         xlab =  "MAF",
+         main = paste("MAF distribution", country))
+    
+    plot(ecdf(fws_final),
+         xlab = "Fws",
+         main = paste("Fws distribution for", country))
+    dev.off()
+    # reset filter
+    seqSetFilter(mgen)
+  }
+}
+
+```
+
+
+
+
 ```{r snp-missingess, cache=TRUE}
-# filter based on field samples
-# filter based on qd > 20, sor > 1, mqrank > -2 
-v_ids <- (gatk_df %>% filter(qd > 20, sor > 1 | is.na(sor), mqrank > -2 | is.na(mqrank)))$variant.id
-seqSetFilter(mgen, sample.id = field_isolates$sample, variant.id = v_ids)
 
+```{r coverage-filtering, cache=TRUE}
 # sample coverage 
 sample_5x <- perSiteCoverageBySNP(mgen, 5L)
 sample_10x <- perSiteCoverageBySNP(mgen, 10L)
@@ -242,7 +337,6 @@ plot(ecdf(sample_5x),
 lines(ecdf(sample_10x), col = cbbPalette[2])
 lines(ecdf(sample_20x), col = cbbPalette[3])
 legend('left',  c('5x', '10x', '20x'), fill=cbbPalette, border=NA)
-
 ```
 From the ECDF coverage plots we find that more than 90\% of samples 
 have at least 90\% of theirs SNPs covered to 5 bases. Moreover, 90\% of samples
