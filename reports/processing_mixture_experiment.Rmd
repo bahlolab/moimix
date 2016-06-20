@@ -1,0 +1,103 @@
+---
+title: "Processing Malaria Genomics Project Pf3k v5"
+author: "Stuart Lee"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = TRUE,
+                      cache.path = "./cache/", fig.path = "./figures/")
+# Description: Use global polymorphisms and PReichenowi alignments to 
+# determine optimal set of mixture isolates.
+library(SeqArray)
+devtools::install_github("bahlolab/moimix")
+
+```
+
+# Introduction
+
+We have analysed 27 mixture isolates from lab-strains obtained from the 
+[Malaria Genomics Project](https://www.malariagen.net/data/pf3k-5) pilot
+data release version 5. These samples contain mixtures of lab-strains, 3D7,
+Dd2, HB3, and 7G8 in varying proportions. There are at most three mixtures of
+different strains. They were sequenced by Dr Jason Wendler
+at the Wellcome Trust Sanger Institute and can be found at the European Nucleotide
+Archive under study accession [PRJEB4338](http://www.ebi.ac.uk/ena/data/view/PRJEB4338).
+We have also included 5 other single clonal strains from the Pf3k release for
+validation.
+
+# Extracting global polyporphisms
+
+# Annotating reference strain alleles
+
+Since we have alinged to the 3D7 reference genome, in cases where there are
+mixtures of 3D7 with another strain, the NRAF produces a single band centred at the
+non-reference strains proportion, i.e. we are variant in non-reference strain but
+not to the reference genome itself. For mixtures of three isolates we produce 3
+distinct clusters. We use `moimix` function `binommix` to fit our binomial
+mixture models, trying k = 1 to 5 clones.
+
+
+# Extracting mixture data 
+
+To construct polymorphic markers for the known mixture strains we extract a set
+of high MAF and high heterzygous set of global markers from the global field
+isolate sets. 
+
+```{r mixture-step-1, fig.show='hold'}
+seqSetFilter(mgen, sample.id = samples_to_keep, variant.id = variant_filter)
+
+maf_all <- getMAF(mgen)
+
+
+het_all <- getHeterozygosity(mgen)
+
+plot(ecdf(maf_all))
+plot(ecdf(het_all))
+
+```
+
+We see that as observed in the other populations the MAF distribution is
+biased to rare alleles. If we choose SNVs that are heterozygous, this
+should give us a cleaner signal for detecting MOI.
+
+```{r mixtures-step-2}
+mix_inform_snps <- variant_filter[maf_all > 0.01 & het_all > 0.01]
+
+# read in mixture metadata
+mixture <- read_rds("processed_data/mixtures_all.rds")
+
+seqSetFilter(mgen, variant.id = mix_inform_snps, sample.id = mixture$sample)
+
+```
+
+We also plot the BAF frequencies to see if the signal remains in this
+reduced variant set.
+
+```{r plot-baf}
+bf <- bafMatrix(mgen)
+
+for(sample in mixture$sample) {
+    plot(bf, sample)
+}
+
+```
+
+Finally, we export the mixture data to a GDS file and make it available to 
+`moimix`.
+
+```{r mixture-export}
+seqExport(mgen, "processed_data/mixtures_clean.gds")
+
+```
+# Appendix
+
+```{r sessionInfo}
+# tidy up gds
+seqSetFilter(mgen)
+seqClose(mgen)
+# cleanup.gds("processed_data/malaria_gen5.gds")
+
+sessionInfo()
+```
