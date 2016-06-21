@@ -304,8 +304,8 @@ extractPED <- function(gdsfile, moi.estimates = NULL, use.hets = FALSE, outfile 
     chr <- seqGetData(gdsfile, "chromosome")
     pos <- seqGetData(gdsfile, "position")
     snp_id <- paste0(chr, ":", pos)
-    # TODO: build proper genetic map for genetic distance setting
-    genetic_distance <- pos / 17000
+    # estimated by L Henden using malaria genetic crosses data
+    genetic_distance <- pos / 17141
     map_data <- data.frame(chr, snp_id, genetic_distance, pos)
     
     if( !is.null(outfile)) {

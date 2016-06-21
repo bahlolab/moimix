@@ -20,13 +20,13 @@ getMAF <- function(gdsfile) {
     maf <- function(x) {
         # frequency of ref and alt reads over all samples
         coverage <- colSums(x, na.rm = TRUE)
-        pmin(coverage / sum(coverage))
+        min(coverage / sum(coverage))
     }
     res <- seqApply(gdsfile, "annotation/format/AD",
                     function(x) maf(x),
                     margin = "by.variant",
-                    as.is = "list")
-    unlist(res)
+                    as.is = "double")
+    return(res)
 }
 
 #' Compute heterozygosity by sample 
