@@ -173,6 +173,7 @@ abline(h = param_estimates$mu.hat)
 ## Estimating MOI with $F_{ws}$ 
 An alternative way of assessing clonality is to estimte the $F_{ws}$ statistic.
 An $F_{ws} < 0.95$ is indicative of a clonal infection.
+
 ```{r fws}
 fws_all <- getFws(isolates)
 
@@ -180,14 +181,19 @@ hist(fws_all)
 # see if our sample that we estimated is multiclonal according to fws
 fws_all["PA0021-C"] < 0.95
 # finished analysis on mixture isolates, close it
+
 seqClose(isolates)
 ```
 
-
-# Session Info
-```{r session-info}
-sessionInfo()
-```
 # References
 1. flexmix package - https://cran.r-project.org/web/packages/flexmix/index.html
 2. SeqArray package - http://bioconductor.org/packages/release/bioc/html/SeqArray.html
+
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```
+
+
