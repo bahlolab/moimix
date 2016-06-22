@@ -6,7 +6,7 @@ output: BiocStyle::html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = TRUE,
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = FALSE,
                       cache.path = "./cache/", fig.path = "./figures/")
 # Description: Estimate MAF and determine global minor allele frequencies
 # of polymorphisms. Apply coverage threshold and write out MAF estimates,
@@ -198,7 +198,7 @@ print(ggplot(gatk_df, aes(x =  sor)) + stat_ecdf(),
       vp =  viewport(layout.pos.row = 2, layout.pos.col = 2))
 
 # filter based on field samples
-# filter based on qd > 20, sor < 1, mqrank > -2 
+# filter based on qd > 15, sor < 1, mqrank > -2 , MQ > 50
 
 v_ids <- (gatk_df %>% filter(qd > 15, mq > 50, sor < 1,
                              mqrank > -2 | is.na(mqrank)))$variant.id
@@ -214,7 +214,9 @@ good ratios of  average quality to average depth. The SOR tag is an odds
 ratio score to detect strand bias from a 2 x 2 contingency table using the strands
 and alt/ref allele counts as the rows and columns respectively.
 
-We apply some hard filters to all samples,
+We apply some hard filters to all samples:
+
+
 * QD score > 15
 * SOR < 1
 * MQRankSum > -2 (allowed to be missing for sites with heterozygous calls)
@@ -243,7 +245,7 @@ of three lists per region and lists containing the following for each country:
   * Fws estimates
   * MAF estimates
 
-We also plot the ECDFs for all these parameters.
+We also plot the ECDFs for all these estimates.
 
 ```{r snp-distributions, cache=TRUE}
 mgen_stats <- list()
@@ -256,6 +258,7 @@ for (location in unique(field_isolates$region)) {
     # apply filter first pass
     samples <- field_isolates$sample[field_isolates$country == country]
     # filter first
+    cat(paste("## Now running", country, "estimates"))
     seqSetFilter(mgen, sample.id = samples, variant.id = v_ids)
     # SNVs covered to 5 bases overall samples in country
     # first pass at computing MAF
@@ -306,7 +309,6 @@ for (location in unique(field_isolates$region)) {
     plot(ecdf(fws_final),
          xlab = "Fws",
          main = paste("Fws distribution for", country))
-    dev.off()
     # reset filter
     seqSetFilter(mgen)
   }
