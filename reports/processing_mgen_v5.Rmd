@@ -371,7 +371,8 @@ by_region_samples <- lapply(region_results_samples,
 For the IBD analysis we require filters on the variants to ensure the SNPs
 have high enough MAFs and to annotate samples that are putatively clonal. 
 
-To do this we perform the following steps
+To do this we perform the following steps:
+
 1. Subset the calls by geographic region defined above.
 2. Use the $F_{ws}$ metric estimated above to annotate samples as either single clones 
 or multiple clone infections. We use this for a quick proxy for multiple infections,
@@ -409,6 +410,7 @@ for (region in unique(field_isolates$region)) {
   # extract annotations for the subset
   annotations <- data.frame(chr = seqGetData(mgen, "chromosome"),
                           pos = seqGetData(mgen, "position"),
+                          variant_id = seqGetData(mgen, "variant.id"),
                           gene_name = seqGetData(mgen, "annotation/info/SNPEFF_GENE_NAME"),
                           gene_biotype = seqGetData(mgen, "annotation/info/SNPEFF_GENE_BIOTYPE"),
                           snp_effect = seqGetData(mgen, "annotation/info/SNPEFF_AMINO_ACID_CHANGE"),
@@ -416,12 +418,15 @@ for (region in unique(field_isolates$region)) {
                           snp_aa_change = seqGetData(mgen, "annotation/info/SNPEFF_AMINO_ACID_CHANGE"),
                           snp_codon_change = seqGetData(mgen, "annotation/info/SNPEFF_CODON_CHANGE"),
                           exon_id = seqGetData(mgen, "annotation/info/SNPEFF_EXON_ID"),
-                          transcript_id = seqGetData(mgen, "annotation/info/SNPEFF_TRANSCRIPT_ID"))
+                          transcript_id = seqGetData(mgen, "annotation/info/SNPEFF_TRANSCRIPT_ID"),
+                          stringsAsFactors = FALSE)
   
+  # recode missing '' as NA
+  annotations[annotations == ''] <- NA
   # show annotation sets by chromosome
   
-  knitr::kable(annotations %>% 
-                 count(chr, snp_functional_class, gene_biotype))
+  print(knitr::kable(annotations %>% 
+                 count(chr, snp_functional_class, gene_biotype)))
   
   fws <- by_region_fws[[region]]
   # region summary
@@ -435,7 +440,7 @@ for (region in unique(field_isolates$region)) {
   write_rds(region_plink, 
             paste0("processed_data/", 
                    gsub(" ", "_", tolower(region)), "_ped.rds"))
-  # extract genotypes
+  # extract genotypes / allele counts
   region_genotypes <- alleleCounts(mgen)
   write_rds(region_genotypes, 
             paste0("processed_data/", 
