@@ -2,7 +2,7 @@
 title: "Processing Malaria Genomics Project Pf3k v5"
 author: "Stuart Lee"
 date: "`r Sys.Date()`"
-output: html_document
+output: BiocStyle::html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -13,10 +13,6 @@ knitr::opts_chunk$set(echo = TRUE, message = TRUE,
 # heterozygosity estimates, create final mixture GDS file.
 
 devtools::install_github("bahlolab/moimix")
-# change this line to run all region datasets
-out_file <-  c("processed_data/se_asia.rds", "processed_data/west_africa.rds", 
-               "processed_data/central_africa.rds", "processed_data/snp_annotations_clean.rds")
-eval_subsets <- all(file.exists(out_file) == FALSE)
 ```
 
 # Introduction
@@ -247,7 +243,9 @@ of three lists per region and lists containing the following for each country:
   * Fws estimates
   * MAF estimates
 
-```{r snp-distributions}
+We also plot the ECDFs for all these parameters.
+
+```{r snp-distributions, cache=TRUE}
 mgen_stats <- list()
 
 for (location in unique(field_isolates$region)) {
@@ -301,7 +299,7 @@ for (location in unique(field_isolates$region)) {
      ylab = "Cumulative proportion of SNPs",
      main= paste("ECDF coverage at 5x for", country))
     
-    plot(ecdf(maf_final), breaks = 100,
+    plot(ecdf(maf_final),
          xlab =  "MAF",
          main = paste("MAF distribution", country))
     
@@ -316,102 +314,54 @@ for (location in unique(field_isolates$region)) {
 
 ```
 
+The following table presents the counts of SNPs and samples for each regions,
+that fit the above filters.
 
-
-
-```{r snp-missingess, cache=TRUE}
-
-```{r coverage-filtering, cache=TRUE}
-# sample coverage 
-sample_5x <- perSiteCoverageBySNP(mgen, 5L)
-sample_10x <- perSiteCoverageBySNP(mgen, 10L)
-sample_20x <- perSiteCoverageBySNP(mgen, 20L)
-
-cbbPalette <- c("#000000", "#E69F00", "#56B4E9")
-
-plot(ecdf(sample_5x),
-     col = cbbPalette[1],
-     xlab = "Proportion of samples",
-     ylab = "Cumulative proportion of SNPs",
-     main = "")
-lines(ecdf(sample_10x), col = cbbPalette[2])
-lines(ecdf(sample_20x), col = cbbPalette[3])
-legend('left',  c('5x', '10x', '20x'), fill=cbbPalette, border=NA)
-```
-From the ECDF coverage plots we find that more than 90\% of samples 
-have at least 90\% of theirs SNPs covered to 5 bases. Moreover, 90\% of samples
-have at least 70\% of their SNPs covered to 10 bases and 90\% of samples have at
-least 60\% of their SNPs covered by 20 bases.
-
-
-```{r sample-missingness, cache=TRUE}
-
-# snp coverage by number of samples covered up to 5x, 10x, 10x
-snp_5x <- perSiteCoverageBySample(mgen, 5L)
-snp_10x <- perSiteCoverageBySample(mgen, 10L)
-snp_20x <- perSiteCoverageBySample(mgen, 20L)
-
-
-plot(ecdf(snp_20x),
-     col = cbbPalette[1], xlab = "Proportion of SNPs", 
-     ylab = "Cumulative proportion of of samples",
-     main = "")
-lines(ecdf(snp_10x), col = cbbPalette[2])
-lines(ecdf(snp_20x), col = cbbPalette[3])
-legend('left', c('5x', '10x', '20x'), fill=cbbPalette, border=NA)
-
+```{r snps-summary}
+filter_results <- lapply(mgen_stats, 
+                         function(country_list)  { 
+                           data.frame(country = names(country_list),
+                                      bind_rows(lapply(country_list, 
+                                                       function(info) {
+                                                         data.frame(n_snps = length(info$snps),
+                                                                    n_samples = length(info$samples))
+                                                       })))})
+knitr::kable(left_join(field_isolates %>% 
+                         distinct(region, country)  %>% 
+                         select(region, country),
+                       bind_rows(filter_results)))
 ```
 
-Similarly, from the ECDF coverage plots we see that more than 90\% of the SNPs 
-are covered to at least 5 bases in 90\% of samples. 
-While 60\% of SNPs are covered up to 10 bases in 90\% of samples and 30\% of SNP
-s are covered up to 20 bases in 90\% of the samples.
- 
-Since for this analysis we are more interested in evaluating known variants
-(i.e. true positive variants) we applied some hard filtering to this dataset:
+Aside from Nigerian samples we appear to have obtained enough SNPs within each
+region for local IBD analysis. Futhermore, we appear to have gotten similar SNP
+counts per region which is reassuring. We will exclude those samples in Nigeria
+from downstream analysis. If we take the unique number of SNPs at MAF > 1\% per
+country within a region we get the following SNP counts by region:
 
-* select variants where at least 90% of SNPs are covered to at least 10 bases
-in all samples.
-* select samples where samples have at least 90\% of their SNPs
-covered by at least 5 reads.
+```{r region-snp-summary}
 
-```{r apply-filters}
-variant_filter <- v_ids[which(snp_10x > 0.9)]
+region_results <- lapply(mgen_stats, 
+                         function(country_list)
+                           lapply(country_list, function(info) info$snps))
 
+# remove Nigieria as sample size is very low
+wa_countries <- names(region_results[[1]])  
+region_results[[1]] <- region_results[[1]][wa_countries != "Nigeria"]
 
-samples_to_keep <- field_isolates$sample[which(sample_5x > 0.9)]
+by_region_snps <- lapply(region_results, 
+                         function(region) Reduce("unique", region))
 
-seqSetFilter(mgen, sample.id = samples_to_keep, variant.id = variant_filter)
-```
+knitr::kable(unlist(lapply(by_region_snps, length)) %>% data.frame)
+# extract samples 
+region_results_samples <- lapply(mgen_stats,
+                            function(country_list) lapply(country_list, 
+                                                          function(info) info$samples))
+region_results_samples[[1]] <- region_results_samples[[1]][wa_countries != "Nigeria"]
 
-This leaves us with `r length(samples_to_keep)` samples and 
-`r length(variant_filter)` variants. The samples segregate by region as follows:
-
-```{r group-region}
-filtered_fi <- field_isolates %>% filter(sample %in% samples_to_keep)
-knitr::kable(filtered_fi %>% count(region, country))
-```
-
-And the variants segregate by chromosome as follows:
-```{r group-chr}
-coords <- getCoordinates(mgen)
-
-knitr::kable(coords %>% count(chromosome))
-```
-
-We save the global dataset as follows by extracting genotype calls
-(setting the heterozygous calls to missing at the moment) and the allele counts.
-# Global data set
-```{r extract-global}
-ped_all <- extractPED(mgen, use.hets = FALSE)
-
-acounts <- alleleCounts(mgen)
-
-write_rds(ped_all, "processed_data/mgen_all_ped.rds")
-write_rds(acounts, "processed_data/mgen_all_allele_counts.rds")
+by_region_samples <- lapply(region_results_samples, 
+                            function(region) unlist(region, use.names = FALSE))
 
 ```
-
 
 
 # Constructing three region specific data subsets
@@ -421,110 +371,41 @@ have high enough MAFs and to annotate samples that are putatively clonal.
 
 To do this we perform the following steps
 1. Subset the calls by geographic region defined above.
-2. Estimate the $F_{ws}$ metric to annotate samples as either single clones 
+2. Use the $F_{ws}$ metric estimated above to annotate samples as either single clones 
 or multiple clone infections. We use this for a quick proxy for multiple infections,
 before assessing this in more detail using `moimix`.
-3. Estimate the MAFs directly from read-count data and select variants that
-are polymorphic in that region. 
+3. Estimate the MAFs directly from read-count data within a region. We can then 
+look at the overall estimated MAF distributions using our combined variant sets.
 
-We also save the PED and MAP file as an R objects to speed up write-out.
-
-## Central Africa
-
-```{r central-africa, eval = eval_subsets}
-# get central africa IDs
-centr_afr <- seqGetData(mgen, "sample.id")[seqGetData(mgen, "sample.annotation/region") == "Central Africa"]
-# filter gds
-seqSetFilter(mgen, sample.id = centr_afr, variant.id = variant_filter)
-
-# estimate MAF
-maf_ca <- getMAF(mgen)
-# remove variants that are not polymorphic at all in this region (MAF == 0)
-snp_ca <- variant_filter[maf_ca > 0]
-
-hist(maf_ca[snp_ca], breaks = 100)
-seqSetFilter(mgen, sample.id = centr_afr, variant.id = snp_ca)
-# estimate Fws metric
-fws_central_africa <- getFws(mgen)
-moi_ca <- data.frame(sample = centr_afr, fws = fws_central_africa, 
-                     moi = ifelse(fws_central_africa > 0.95, 1, 2))
-
-hist(fws_central_africa, breaks = 100)
-
-plink_ca <- extractPED(mgen, moi.estimates = moi_ca$moi)
-
-write_rds(plink_ca, "processed_data/central_africa.rds")
-
-seqSetFilter(mgen)
-
-```
-
-## West Africa
-
-```{r west-africa, eval = eval_subsets}
-# get central africa IDs
-west_afr <- seqGetData(mgen, "sample.id")[seqGetData(mgen, "sample.annotation/region") == "West Africa"]
-# filter gds
-seqSetFilter(mgen, sample.id = west_afr, variant.id = variant_filter)
-
-# estimate MAF
-maf_wa <- getMAF(mgen)
-# remove variants that are not polymorphic at all in this region (MAF == 0)
-snp_wa <- variant_filter[maf_ca > 0]
-hist(maf_wa[snp_wa], breaks = 100)
-
-seqSetFilter(mgen, sample.id = west_afr, variant.id = snp_wa)
-# estimate Fws metric
-fws_west_africa <- getFws(mgen)
-moi_wa <- data.frame(sample = west_afr, fws = fws_west_africa, 
-                     moi = ifelse(fws_west_africa > 0.95, 1, 2))
+We also save the PED and MAP file, annotations,  as an R objects to speed up write-out.
 
 
-hist(fws_west_africa, breaks = 100)
+```{r combined-maf}
+# extract Fws metric 
+by_region_fws <- lapply(mgen_stats, function(country_list) data.frame(fws = unlist(lapply(country_list, 
+                                                                  function(info) info$fws))))
+by_region_fws <- lapply(by_region_fws, function(x)  add_rownames(x, var = "id") %>% 
+                          tidyr::separate(id, c("country", "sample.id"), "(\\.)(.*?)", extra = "merge"))
+# filter out Nigeria
+by_region_fws[[1]] <- filter(by_region_fws[[1]], country != "Nigeria")
 
-plink_wa <- extractPED(mgen, moi.estimates = moi_wa$moi)
+# save mafs, annotations, Fws values in  list of data.frames
+# extract PED and map files as well
+for (region in unique(field_isolates$region)) {
+  # subset 
+  seqSetFilter(mgen, 
+               sample.id = by_region_samples[[region]], 
+               variant.id = by_region_snps[[region]])
+  maf_by_region <- getMAF(mgen)
+  
+  cat(paste("##", region))
 
-write_rds(plink_wa, "processed_data/west_africa.rds")
-seqSetFilter(mgen)
-```
-
-## SE Asia
-
-```{r se-asia, eval = eval_subsets}
-# get central africa IDs
-se_asia <- seqGetData(mgen, "sample.id")[seqGetData(mgen, 
-                                                    "sample.annotation/region") == "SE Asia"]
-# filter gds
-seqSetFilter(mgen, sample.id = se_asia, variant.id = variant_filter)
-
-# estimate MAF
-maf_sea <- getMAF(mgen)
-# remove variants that are not polymorphic at all in this region (MAF == 0)
-snp_sea <- variant_filter[maf_sea > 0]
-hist(maf_sea[snp_sea], breaks = 100)
-
-seqSetFilter(mgen, sample.id = se_asia, variant.id = snp_sea)
-# estimate Fws metric
-fws_se_asia <- getFws(mgen)
-moi_sea <- data.frame(sample = se_asia, fws = fws_se_asia, 
-                     moi = ifelse(fws_se_asia > 0.95, 1, 2))
-
-hist(fws_se_asia, breaks = 100)
-
-plink_sea <- extractPED(mgen, moi.estimates = moi_sea$moi)
-
-write_rds(plink_sea, "processed_data/se_asia.rds")
-
-seqSetFilter(mgen)
-```
-
-# Save annotation sets
-We also save the variant annotations across all populations.
-
-```{r gene-ids, eval = eval_subsets}
-seqSetFilter(mgen, variant.id = variant_filter)
-
-annotations <- data.frame(chr = seqGetData(mgen, "chromosome"),
+  hist(maf_by_region, breaks = 100,
+       xlab = "MAF",
+       main = paste("MAF distribution", region))
+  
+  # extract annotations for the subset
+  annotations <- data.frame(chr = seqGetData(mgen, "chromosome"),
                           pos = seqGetData(mgen, "position"),
                           gene_name = seqGetData(mgen, "annotation/info/SNPEFF_GENE_NAME"),
                           gene_biotype = seqGetData(mgen, "annotation/info/SNPEFF_GENE_BIOTYPE"),
@@ -534,68 +415,35 @@ annotations <- data.frame(chr = seqGetData(mgen, "chromosome"),
                           snp_codon_change = seqGetData(mgen, "annotation/info/SNPEFF_CODON_CHANGE"),
                           exon_id = seqGetData(mgen, "annotation/info/SNPEFF_EXON_ID"),
                           transcript_id = seqGetData(mgen, "annotation/info/SNPEFF_TRANSCRIPT_ID"))
+  
+  # show annotation sets by chromosome
+  
+  knitr::kable(annotations %>% 
+                 count(chr, snp_functional_class, gene_biotype))
+  
+  fws <- by_region_fws[[region]]
+  # region summary
+  region_summary <- list(maf = maf_by_region, annotations = annotations, fws = fws)
+  write_rds(region_summary, 
+            paste0("processed_data/", 
+                   gsub(" ", "_", tolower(region)), "_summary.rds"))
 
-# counts
-knitr::kable(annotations %>% 
-                 count(snp_functional_class, gene_biotype))
-
-write_rds(annotations, "processed_data/snp_annotations_clean.rds")
-
-```
-
-
-# Extracting mixture data 
-
-To construct polymorphic markers for the known mixture strains we extract a set
-of high MAF and high heterzygous set of global markers from the global field
-isolate sets. 
-
-```{r mixture-step-1, fig.show='hold'}
-seqSetFilter(mgen, sample.id = samples_to_keep, variant.id = variant_filter)
-
-maf_all <- getMAF(mgen)
-
-
-het_all <- getHeterozygosity(mgen)
-
-plot(ecdf(maf_all))
-plot(ecdf(het_all))
-
-```
-
-We see that as observed in the other populations the MAF distribution is
-biased to rare alleles. If we choose SNVs that are heterozygous, this
-should give us a cleaner signal for detecting MOI.
-
-```{r mixtures-step-2}
-mix_inform_snps <- variant_filter[maf_all > 0.01 & het_all > 0.01]
-
-# read in mixture metadata
-mixture <- read_rds("processed_data/mixtures_all.rds")
-
-seqSetFilter(mgen, variant.id = mix_inform_snps, sample.id = mixture$sample)
-
-```
-
-We also plot the BAF frequencies to see if the signal remains in this
-reduced variant set.
-
-```{r plot-baf}
-bf <- bafMatrix(mgen)
-
-for(sample in mixture$sample) {
-    plot(bf, sample)
+  # extract PED
+  region_plink <- extractPED(mgen, moi.estimates = ifelse(fws$fws > 0.95, 1, 2))
+  write_rds(region_plink, 
+            paste0("processed_data/", 
+                   gsub(" ", "_", tolower(region)), "_ped.rds"))
+  # extract genotypes
+  region_gentoypes <- alleleCounts(mgen)
+  write_rds(region_genotypes, 
+            paste0("processed_data/", 
+                   gsub(" ", "_", tolower(region)), "_acounts.rds"))
+  
 }
 
 ```
 
-Finally, we export the mixture data to a GDS file and make it available to 
-`moimix`.
-
-```{r mixture-export}
-seqExport(mgen, "processed_data/mixtures_clean.gds")
-
-```
+ 
 # Appendix
 
 ```{r sessionInfo}

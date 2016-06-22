@@ -5,7 +5,7 @@
 \title{Plot bafMatrix object}
 \usage{
 \method{plot}{bafMatrix}(x, sample.id, assignments = NULL, y = NULL,
-  xlab = NULL, ylab = "SNV frequency", ylim = c(0, 1), pch = 16, ...)
+  xlab = "", ylab = "SNV frequency", ylim = c(0, 1), pch = 16, ...)
 }
 \arguments{
 \item{x}{a bafMatrix object}
