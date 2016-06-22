@@ -2,7 +2,7 @@
 title: "Processing Malaria Genomics Project Pf3k v5"
 author: "Stuart Lee"
 date: "`r Sys.Date()`"
-output: html_document
+output: BiocStyle::html_document
 ---
 
 ```{r setup, include=FALSE}

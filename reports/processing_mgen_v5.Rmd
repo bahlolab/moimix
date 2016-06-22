@@ -434,7 +434,7 @@ for (region in unique(field_isolates$region)) {
             paste0("processed_data/", 
                    gsub(" ", "_", tolower(region)), "_ped.rds"))
   # extract genotypes
-  region_gentoypes <- alleleCounts(mgen)
+  region_genotypes <- alleleCounts(mgen)
   write_rds(region_genotypes, 
             paste0("processed_data/", 
                    gsub(" ", "_", tolower(region)), "_acounts.rds"))
