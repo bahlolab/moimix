@@ -7,10 +7,4 @@
 inst/doc
 vignettes/*.html
 vignettes/*.md
-reports/raw_data/
-reports/processed_data/
-reports/cache/
-report/figures/
-reports/*.Rout
-reports/.dropbox
-reports/Icon*
+reports/*
