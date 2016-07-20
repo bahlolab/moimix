@@ -5,6 +5,15 @@ cache: packages
 
 warnings_are_errors: false
 
+bioc_packages:
+  - SeqArray
+  - SeqVarTools
+  - GenomicRanges
+  - BiocParallel
+  - BiocStyle
+  - graph
+  - Rgraphviz
+
 before_script:
   - export PKG_NAME=$(Rscript -e 'cat(paste0(devtools::as.package(".")$package))')
   - export PKG_TARBALL=$(Rscript -e 'pkg <- devtools::as.package("."); cat(paste0(pkg$package,"_",pkg$version,".tar.gz"))')
