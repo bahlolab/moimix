@@ -74,8 +74,8 @@ seqSummary(my_vcf)
 
 Here we present an example analysis from data obtained from the [Malaria Genomics
 Consoritum](https://www.malariagen.net/projects/parasite/pf) community project.
-The data consists of 5 _Plasmodium falciparum_ isolates from The Gambia with 
-approximately 78,000 high-quality biallelic SNVs on 14 nuclear chromosomes and the
+The data consists of 3 _Plasmodium falciparum_ isolates from The Gambia with 
+approximately 60,000 high-quality biallelic SNVs on 14 nuclear chromosomes and the
 apicoplast. 
 
 For details on how the data was processed please see the README file located at
