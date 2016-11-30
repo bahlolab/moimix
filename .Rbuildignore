@@ -4,3 +4,4 @@
 .gitignore
 Makefile
 reports/
+inst/doc/

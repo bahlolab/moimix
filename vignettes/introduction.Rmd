@@ -2,7 +2,7 @@
 title: "Introduction to moimix package"
 author: "Stuart Lee"
 date: "`r Sys.Date()`"
-output: BiocStyle::html_document
+output: html_document
 vignette: >
   %\VignetteIndexEntry{introduction}
   %\VignetteEngine{knitr::rmarkdown}
@@ -145,6 +145,9 @@ And an example of multiple-clone infection.
 plot(isolate_baf,  sample.id = "PA0021-C")
 ```
 
+And a slighly more complicated example.
+```{r plot-baf-moi3}
+```
 ## Estimating MOI with `binommix`
 
 To estimate MOI we use the `binomix` function. MOI is estimated on a per-isolate
@@ -152,7 +155,7 @@ basis using a binomial mixture model implemented in the R package `flexmix`.
 In order to fit a model for an isolate, we need a matrix of read counts and to
 set the value of $k=2c$ where $c$ is the number clonal infections.
 
-We fit a mixture model with 4 bands on sample "PA0021-C" and report the results.
+We fit a mixture model assuming there are 2 infections on "PA0021-C" and report the results.
 
 ```{r fit-model, warning=FALSE}
 set.seed(2002)
@@ -163,25 +166,56 @@ counts <- alleleCounts(isolates)
 m1 <- binommix(counts, sample.id = "PA0021-C", k = 2)
 # to inspect the model and view parameter estimates
 param_estimates <- getTheta(m1$fits)
-param_estimates
+```
 
-# visualise model output
+The estimated clonal proportions under the binomial mixture model are:
+```{r}
+param_estimates
+```
+
+We can visualise the model output as follows:
+```{r moi2-baf-mf}
 plot(isolate_baf, "PA0021-C")
-abline(h = param_estimates$mu.hat)
+abline(h = param_estimates$mu.hat, col = "blue", lty = 2)
+```
+
+Or by plotting a histogram.
+
+```{r moi2-hist-mf}
+bf <- isolate_baf$baf_matrix["PA0021-C",]
+hist(bf, breaks = 20, main = "MOI = 2 infection", xlab = "SNV frequency")
+abline(v = param_estimates$mu.hat, col = "blue", lty = 2)
+```
+
+We can also examine the more complicated mixed infection, which appears to be
+a mixture of 3 or 4 clones. We can use the Bayesian Information Criterion to
+select the number of components. 
+
+```{r multi-moi}
+m2 <- binommix(counts, sample.id = "PA0008-C", k = 2:4)
+
+plot(isolate_baf, "PA0008-C")
+abline(h = getTheta(m2$fits, criterion = "BIC")$mu.hat, col = "blue", lty = 2)
+
+hist(m2$baf, breaks = 20, main = "Complex Infection", xlab = "SNV frequency" )
+abline(v = getTheta(m2$fits, criterion = "BIC")$mu.hat, col = "blue", lty = 2)
+
 
 ```
 
+In this case we end up with 4 components in our model - with estimated clonal proportions as
+`r paste0("(", paste(round(getTheta(m2$fits, criterion = "BIC")$pi.hat, 2), collapse = ","), ")")`.
+
+
 ## Estimating MOI with $F_{ws}$ 
 An alternative way of assessing clonality is to estimte the $F_{ws}$ statistic.
-An $F_{ws} < 0.95$ is indicative of a clonal infection.
+This is useful if you are only interested in identifying clonal infections for filtering
+in downstream analyses. An $F_{ws} < 0.99$ is indicative of a clonal infection.
 
 ```{r fws}
 fws_all <- getFws(isolates)
 
-hist(fws_all)
-# see if our sample that we estimated is multiclonal according to fws
-fws_all["PA0021-C"] < 0.95
-# finished analysis on mixture isolates, close it
+fws_all
 
 seqClose(isolates)
 ```
