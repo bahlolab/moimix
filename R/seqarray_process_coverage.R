@@ -5,9 +5,12 @@
 #' @importFrom SeqArray seqGetData
 processGATK <- function(gdsfile, ref.allele) {
     # GATK using the AD tag to store read count data
-    read_counts <-seqGetData(gdsfile, "annotation/format/AD")$data
+    read_counts <-seqGetData(gdsfile, "annotation/format/AD")
+    is_valid <- (read_counts$length == 2)
+    read_counts <- read_counts$data
+    
     sample.id <- seqGetData(gdsfile, "sample.id")
-    variant.id <- seqGetData(gdsfile, "variant.id")
+    variant.id <- seqGetData(gdsfile, "variant.id")[is_valid]
     
     
     # for each variant the AD tag contains the ref and alt counts
