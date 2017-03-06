@@ -17,6 +17,10 @@ bafMatrix <- function(gdsfile) {
         stop("Must have annotation/format/AD tag to compute B-allele frequencies")
     }
     
+    is_valid <- seqGetData(gdsfile, "annotation/format/AD")$length == 2
+    variant_id <- seqGetData(gdsfile, "variant.id")
+    seqSetFilter(gdsfile, variant.id = variant_id[is_valid])
+    
     # compute BAF for each sample 
     nrf <- seqApply(gdsfile, "annotation/format/AD",
                     function(x) x[,2] / rowSums(x),
@@ -25,7 +29,7 @@ bafMatrix <- function(gdsfile) {
     # convert list to matrix
     baf <- matrix(unlist(nrf), ncol = length(nrf),
                   dimnames = list(sample = seqGetData(gdsfile, "sample.id"),
-                                  variant = seqGetData(gdsfile, "variant.id")))
+                                  variant = variant_id[is_valid]))
     
     # compute per variant B-allele frequencies
     total_depth <- perSiteCoverage(gdsfile)
@@ -38,6 +42,7 @@ bafMatrix <- function(gdsfile) {
                                  baf_site = b_depth / total_depth,
                                 coords = getCoordinates(gdsfile)),
                                class = "bafMatrix")
+    seqResetFilter(gdsfile)
     baf_matrix
 }
 

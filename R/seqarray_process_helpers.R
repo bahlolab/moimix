@@ -24,8 +24,9 @@ getDosage <- function(gdsfile) {
     stopifnot(inherits(gdsfile, "SeqVarGDSClass"))
     gt_array <- seqGetData(gdsfile, "genotype")
     sample.id <- seqGetData(gdsfile, "sample.id")
-    variant.id <- seqGetData(gdsfile, "variant.id")
-    dosage <-  matrix(gt_array[1,,] + gt_array[2,,],
+    is_valid <- seqGetData(gdsfile, "annotation/format/AD")$length == 2
+    variant.id <- seqGetData(gdsfile, "variant.id")[is_valid]
+    dosage <-  matrix(gt_array[1,,is_valid] + gt_array[2,,is_valid],
                       nrow = length(sample.id), 
                       ncol = length(variant.id),
                       dimnames = list(sample = sample.id,
