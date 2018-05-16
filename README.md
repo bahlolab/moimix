@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/bahlolab/moimix.svg?branch=master)](https://travis-ci.org/bahlolab/moimix)
-[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.58257.svg)](http://dx.doi.org/10.5281/zenodo.58257)
+[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.58257.svg)](https://doi.org/10.5281/zenodo.58257)
 
 # moimix: an R package for evaluating multiplicity of infection in malaria parasites
 http://bahlolab.github.io/moimix/
