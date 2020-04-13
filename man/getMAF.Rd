@@ -20,4 +20,3 @@ reads covering the reference and alternate allele over all samples.
 \note{
 Currently only supports gds files obtained from GATK callers
 }
-

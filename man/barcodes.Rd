@@ -15,4 +15,3 @@ Generate GenomicRanges object from GDS file
 \details{
 Return a GenomicRanges object containing Pf barcode information from Volkmann, 2008.
 }
-

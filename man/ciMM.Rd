@@ -24,4 +24,3 @@ Generate Confidence Intervals for
 parameter estimates using estimated Fisher Information
 Matrix
 }
-

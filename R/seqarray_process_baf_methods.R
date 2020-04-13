@@ -4,7 +4,7 @@
 #' Compute B-allele frequency spectrum genome-wide
 #'
 #' @param gdsfile a \code{\link[SeqArray]{SeqVarGDSClass}} object
-#' @importFrom  SeqArray seqSummary seqApply seqGetData
+#' @importFrom  SeqArray seqSummary seqApply seqGetData seqResetFilter
 #' @details Constructs a bafMatrix object which is a list consisting of 
 #' a matrix of estimated B-allele frequencies and 
 #' @return a bafMatrix object 
@@ -52,6 +52,11 @@ bafMatrix <- function(gdsfile) {
 #' @param x a bafMatrix object
 #' @param sample.id character name of sample to plot
 #' @param assignments integer vector of cluster memberships (NULL)
+#' @param y unnused argument for plot.bafMatrix
+#' @param xlab Axis label along chromosome regions
+#' @param ylab Axis label for SNV frequency 
+#' @param ylim Limits for y axis default is between 0 and 1
+#' @param pch Plot symbol default is 16
 #' @param ... other parameters to pass to \code{\link[graphics]{plot}}
 #' @details Plots the genome-wide signal of MOI within an isolate from
 #' B-allele frequencies.

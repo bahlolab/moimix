@@ -12,4 +12,3 @@ getDosage(gdsfile)
 \description{
 Helper function for producing matrix of allele dosages
 }
-

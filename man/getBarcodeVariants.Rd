@@ -16,4 +16,3 @@ getBarcodeVariants(gdsfile, publication = "Volkman2008")
 Helper functions for extracting variant IDs corresponding to previously published
 barcodes.
 }
-

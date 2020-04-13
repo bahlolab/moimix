@@ -19,4 +19,3 @@ Compute B-allele frequency spectrum genome-wide
 Constructs a bafMatrix object which is a list consisting of 
 a matrix of estimated B-allele frequencies and
 }
-

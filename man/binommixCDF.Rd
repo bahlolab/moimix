@@ -19,4 +19,3 @@ Vector of theoretical quantiles
 \description{
 CDF for binomial mixture model
 }
-

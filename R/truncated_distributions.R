@@ -12,7 +12,7 @@
 #'
 #' @param x numeric vector
 #' @param theta rate parameter for exponential
-#' @param lower, upper boundary points for truncation
+#' @param lower,upper boundary points for truncation
 #' @export
 dtexp <- function(x, theta, lower, upper) {
   stopifnot(lower <= upper, theta > 0, lower >= 0, upper <= Inf)
@@ -52,13 +52,14 @@ mleTexp <- function(x, lower, upper) {
 # rtexp(n=S, m=mut_rate, t=1)
 # this code is modified from that given at https://stat.ethz.ch/pipermail/r-help/2010-June/242615.html
 # look into alternate distrubition functions
+
 #' Truncated exponential distribution random number generation
 #'
 #' @description Simulate random numbers from a truncated exponential distribution
 #' @details Simulate SNP alternate allele frequencies from a truncated exponential distribution
 #' Code is modified from that given at https://stat.ethz.ch/pipermail/r-help/2010-June/242615.html
 #' @param n number of random values to return
-#' @param mu rate parameter for exponential
+#' @param theta rate parameter for exponential
 #' @param t cut-off threshold for truncation
 #' @return n random values from TEXP
 #' @export
@@ -95,8 +96,7 @@ dtbeta <- function(x, shape1, shape2, lower = 0, upper = 1) {
   return(tt)
 }
 
-#' @describeIn dtbeta Cumulative distribution function
-#' for truncated beta
+#' @describeIn dtbeta Cumulative distribution function for truncated beta
 ptbeta <- function(x, shape1, shape2, lower = 0, upper = 1) {
   stopifnot(lower <= upper,shape2 > 0, shape1 > 0)
   tt <- x
@@ -108,8 +108,8 @@ ptbeta <- function(x, shape1, shape2, lower = 0, upper = 1) {
   return(tt)
 }
 
-#'  @describeIn dtbeta Quantile function
-#'  @param p vector of probabilities
+#' @describeIn dtbeta Quantile function
+#' @param p vector of probabilities
 qtbeta <- function(p, shape1, shape2, lower = 0, upper = 1) {
   tt <- p
   pin <- pbeta(lower, shape1, shape2) + p * (pbeta(upper, shape1, shape2) - pbeta(lower, shape1, shape2))

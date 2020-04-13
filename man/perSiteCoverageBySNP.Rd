@@ -20,4 +20,3 @@ the proportion of SNPs covered up to threshold
 Compute proportion of SNPs covered up to a lower bound of bases within 
 each sample.
 }
-

@@ -18,4 +18,3 @@ a vector of n.samples length
 Compute the proportion of SNPs within each sample that are covered
 to at least threshold.
 }
-

@@ -17,4 +17,3 @@ criterion}
 \description{
 Return estimated model parameters
 }
-

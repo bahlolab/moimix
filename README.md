@@ -21,9 +21,8 @@ version from Github:
 ```{r}
 # install using devtools packages
 # first install bioc dependencies
-source("https://bioconductor.org/biocLite.R")
-biocLite(c("graph", "Rgraphviz", "SeqArray", "SeqVarTools"))
-devtools::install_github("bahlolab/moimix")
+install.packages("BiocManager")
+BiocManager::install("bahlolab/moimix", build_vignettes = TRUE)
 ```
 
 ## What data input does _moimix_ require?

@@ -15,4 +15,3 @@ seMM(y, model)
 se is computed as the inverse of the Fisher information matrix
 at the EM estimates
 }
-

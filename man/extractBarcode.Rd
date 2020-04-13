@@ -34,4 +34,3 @@ Galinsky, Kevin, et al. "COIL: a methodology for evaluating
 malarial complexity of infection using likelihood from single nucleotide 
 polymorphism data." Malaria journal 14.1 (2015): 4.
 }
-

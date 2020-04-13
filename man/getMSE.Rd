@@ -12,4 +12,3 @@ getMSE(fitted_models)
 \description{
 Model assessment for fitted model using MSE
 }
-

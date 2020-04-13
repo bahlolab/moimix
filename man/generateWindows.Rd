@@ -14,4 +14,3 @@ generateWindows(gdsfile, window_size)
 \description{
 Construct non-overlapping Genomic Windows by Chromosome
 }
-

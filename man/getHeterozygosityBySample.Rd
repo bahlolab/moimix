@@ -22,4 +22,3 @@ for each sample, the reference and and alternate allele frequencies are computed
 as the proportion of reads covering each allele. Then heterozygosity at a SNP
 is 1 - (raf^2 + aaf^2)
 }
-

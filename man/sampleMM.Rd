@@ -22,4 +22,3 @@ sampleMM(n, N, k, mu, pi)
 Generate iid  binomial mixture random variables 
 for testing EM implementation
 }
-

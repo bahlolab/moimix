@@ -27,4 +27,3 @@ Obtain GATK info tags relevant to best practices.
 \references{
 \url{http://gatkforums.broadinstitute.org/gatk/discussion/2806/howto-apply-hard-filters-to-a-call-set}
 }
-

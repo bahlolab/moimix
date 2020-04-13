@@ -18,4 +18,3 @@ the proportion of samples covered up to threshold
 \description{
 Compute the proportion of samples covered up any number of bases
 }
-

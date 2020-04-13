@@ -3,12 +3,15 @@
 \name{dtbeta}
 \alias{dtbeta}
 \alias{ptbeta}
+\alias{qtbeta}
 \alias{rtbeta}
 \title{Truncated beta distribution}
 \usage{
 dtbeta(x, shape1, shape2, lower = 0, upper = 1)
 
 ptbeta(x, shape1, shape2, lower = 0, upper = 1)
+
+qtbeta(p, shape1, shape2, lower = 0, upper = 1)
 
 rtbeta(n, shape1, shape2, lower = 0, upper = 1)
 }
@@ -19,6 +22,8 @@ rtbeta(n, shape1, shape2, lower = 0, upper = 1)
 
 \item{lower, upper}{bounds for truncation}
 
+\item{p}{vector of probabilities}
+
 \item{n}{number of observations}
 }
 \description{
@@ -28,8 +33,9 @@ shape1 and shape2 (and optional truncation bounds)
 }
 \section{Functions}{
 \itemize{
-\item \code{ptbeta}: Cumulative distribution function
-for truncated beta
+\item \code{ptbeta}: Cumulative distribution function for truncated beta
+
+\item \code{qtbeta}: Quantile function
 
 \item \code{rtbeta}: Random number generation
 }}
