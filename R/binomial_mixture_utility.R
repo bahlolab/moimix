@@ -4,11 +4,8 @@
 # Author: Stuart Lee
 # Date: 11/05/2015
 
-#' Collapse allele frequency to half axis
-#' @param p vector of proprotions
 collapseProbs <- function(p) { ifelse(p > 0.5, 1-p, p)}
 
-#' Convert odds to probability
 toProb <- function(o) {
   exp(o) / (1+exp(o))
 }
@@ -67,7 +64,7 @@ getMSE <- function(fitted_models) {
     all_k <- fitted_models$fits@k
     mu_param <- lapply(all_k, function(k) { getTheta(fitted_models$fits, 
                                                      which(all_k == k))$mu.hat })
-    assignments <- lapply(all_k, function(k) clusters(getModel(fitted_models$fits, 
+    assignments <- lapply(all_k, function(k) flexmix::clusters(getModel(fitted_models$fits, 
                                                                k)))
     # compute euclidean distance to each assignment's mean
     dist_to_clusters <- lapply(1:length(mu_param), 
@@ -85,7 +82,7 @@ getMSE <- function(fitted_models) {
 #'
 #' @description Compute sum of squares for mixture components based on known
 #' truth.
-#' @param mixture estimated mixture model
+#' @param model estimated mixture model
 #' @param theta   true mixture-model parameters of form (pi_1,..,pi_k, mu_1,...mu_k)
 #' @importMethodsFrom flexmix parameters prior
 #' @export
@@ -166,7 +163,7 @@ infomat <- function(y, model) {
     mu <- getTheta(model)$mu.hat
     pi <- getTheta(model)$pi.hat
     
-    class.probs <- posterior(model)
+    class.probs <- flexmix::posterior(model)
     mat <- matrix(0, ncol = 2*k, nrow = 2*k)
     # -- second-derivative evaluated at mixture weights
     dq2dpi2 <- function(class.probs, pi, i) {

@@ -40,9 +40,9 @@ binommix <- function(counts_matrix, sample.id, k, coverage_threshold = 0L, niter
 }
 
 
-plot.moimix <- function(moimix_obj, ...) {
-    
-} 
+# plot.moimix <- function(moimix_obj, ...) {
+#     
+# } 
 
 #' #' Fit binomial mixture  model in non-overlapping genomic windows
 #' #' 

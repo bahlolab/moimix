@@ -4,8 +4,7 @@
 \alias{extractPED}
 \title{Extract PED files from gds}
 \usage{
-extractPED(gdsfile, moi.estimates = NULL, use.hets = FALSE,
-  outfile = NULL)
+extractPED(gdsfile, moi.estimates = NULL, use.hets = FALSE, outfile = NULL)
 }
 \arguments{
 \item{gdsfile}{a \code{\link[SeqArray]{SeqVarGDSClass}} object}
@@ -29,4 +28,3 @@ If the use.hets option is true the genotypes are used as is, other
 wise heterzygotes are set to missing. This function is slow if there
 are a large number of variants in the GDS file.
 }
-

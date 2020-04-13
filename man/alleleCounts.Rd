@@ -23,4 +23,3 @@ the function returns a  matrix corresponding the reference or alternate
 read counts. Currently, the AD tag formats from varscan2re and GATK
 are supported.
 }
-

@@ -4,8 +4,17 @@
 \alias{plot.bafMatrix}
 \title{Plot bafMatrix object}
 \usage{
-\method{plot}{bafMatrix}(x, sample.id, assignments = NULL, y = NULL,
-  xlab = "", ylab = "SNV frequency", ylim = c(0, 1), pch = 16, ...)
+\method{plot}{bafMatrix}(
+  x,
+  sample.id,
+  assignments = NULL,
+  y = NULL,
+  xlab = "",
+  ylab = "SNV frequency",
+  ylim = c(0, 1),
+  pch = 16,
+  ...
+)
 }
 \arguments{
 \item{x}{a bafMatrix object}
@@ -13,6 +22,16 @@
 \item{sample.id}{character name of sample to plot}
 
 \item{assignments}{integer vector of cluster memberships (NULL)}
+
+\item{y}{unnused argument for plot.bafMatrix}
+
+\item{xlab}{Axis label along chromosome regions}
+
+\item{ylab}{Axis label for SNV frequency}
+
+\item{ylim}{Limits for y axis default is between 0 and 1}
+
+\item{pch}{Plot symbol default is 16}
 
 \item{...}{other parameters to pass to \code{\link[graphics]{plot}}}
 }
@@ -23,4 +42,3 @@ Plot bafMatrix object
 Plots the genome-wide signal of MOI within an isolate from
 B-allele frequencies.
 }
-

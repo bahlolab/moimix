@@ -15,4 +15,3 @@ an integer vector
 \description{
 Compute per variant depth accross all samples.
 }
-

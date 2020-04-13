@@ -4,7 +4,9 @@
 \name{gambian_isolates}
 \alias{gambian_isolates}
 \title{Plasmodium falciparum SNV data from Gambia.}
-\format{A \code{\link[SeqArray]{SeqVarGDSClass}} object.}
+\format{
+A \code{\link[SeqArray]{SeqVarGDSClass}} object.
+}
 \source{
 \url{ftp://ngs.sanger.ac.uk/production/pf3k/release_4/}
 }
@@ -16,4 +18,3 @@ at \url{ftp://ngs.sanger.ac.uk/production/pf3k/release_4/} for details. The GDS 
 by filtering the MalariaGen VCF files and keeping only biallelic SNPs that were polymorphic in The Gambia
 and passed all filters.
 }
-

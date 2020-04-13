@@ -32,4 +32,3 @@ diversity in natural infections by deep sequencing." Nature 487.7407 (2012):
 \seealso{
 \code{\link{getHeterozygosity}}, \code{\link{getHeterozygosityBySample}}
 }
-

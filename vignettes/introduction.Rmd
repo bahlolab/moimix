@@ -147,6 +147,7 @@ plot(isolate_baf,  sample.id = "PA0021-C")
 
 And a slighly more complicated example.
 ```{r plot-baf-moi3}
+plot(isolate_baf,  sample.id = "PA0008-C") 
 ```
 ## Estimating MOI with `binommix`
 

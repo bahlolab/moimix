@@ -18,4 +18,3 @@ scaledProportion(x, threshold, scale)
 sum number of samples/snps meeting coverage threshold scaled by total number
 of SNPs/proportions
 }
-

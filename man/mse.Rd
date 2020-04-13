@@ -7,12 +7,11 @@
 mse(model, theta)
 }
 \arguments{
-\item{theta}{true mixture-model parameters of form (pi_1,..,pi_k, mu_1,...mu_k)}
+\item{model}{estimated mixture model}
 
-\item{mixture}{estimated mixture model}
+\item{theta}{true mixture-model parameters of form (pi_1,..,pi_k, mu_1,...mu_k)}
 }
 \description{
 Compute sum of squares for mixture components based on known
 truth.
 }
-

@@ -1,8 +1,7 @@
 # seqarray_process_coverage.R
 # Methods for manipulating read counts  from SeqVarGDS objects
 
-#' Process GATK files
-#' @importFrom SeqArray seqGetData
+# Process GATK
 processGATK <- function(gdsfile, ref.allele) {
     # GATK using the AD tag to store read count data
     read_counts <-seqGetData(gdsfile, "annotation/format/AD")
@@ -56,8 +55,7 @@ processGATK <- function(gdsfile, ref.allele) {
     }
 }
 
-#' Process varscan files
-#' @importFrom SeqArray seqGetData
+# Process varscan files
 processVarscan <- function(gdsfile, ref.allele) {
     # varscan is more sensible
     sample.id <- seqGetData(gdsfile, "sample.id")
@@ -92,7 +90,7 @@ processVarscan <- function(gdsfile, ref.allele) {
 #' read counts. Currently, the AD tag formats from varscan2re and GATK
 #' are supported.
 #' @return an alleleCounts matrix object, which is a list containg the 
-#' @importFrom SeqArray seqSummary
+#' @importFrom SeqArray seqSummary seqGetData seqGetData
 #' @export 
 alleleCounts <- function(gdsfile) {
     # I/O checks

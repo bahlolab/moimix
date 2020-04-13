@@ -15,4 +15,3 @@ Compute population level heterozygosity
 \note{
 Need to update so population ids can be submitted.
 }
-

@@ -3,10 +3,8 @@
 \docType{package}
 \name{moimix}
 \alias{moimix}
-\alias{moimix-package}
 \title{Evaluate muliplicity of infection in malaria parasites}
 \description{
 \pkg{moimix} enables the estimation of MOI from SNV data and to evaluate
 the effect of MOI on SNV data.
 }
-

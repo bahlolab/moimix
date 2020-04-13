@@ -26,4 +26,3 @@ wise hets are coded as 3. If get.nucleotides is TRUE a character matrix is
 retruned with the alleles coded, otherwise if use.hets the allele is coded as
 N. Missing genotype calls are coded as X.
 }
-

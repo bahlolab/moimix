@@ -17,15 +17,11 @@ mleTexp(x, lower, upper)
 
 \item{theta}{rate parameter for exponential}
 
-\item{lower, }{upper boundary points for truncation}
+\item{lower, upper}{boundary points for truncation}
 }
 \description{
 Density function for random generation for
 truncated exponential distribution
-
-Derivate of log-likelihood
-
-MLE for truncated exponential
 }
 \section{Functions}{
 \itemize{

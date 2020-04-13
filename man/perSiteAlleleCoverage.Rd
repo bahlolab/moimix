@@ -15,4 +15,3 @@ a matrix of allele counts
 \description{
 Compute per site per sample coverage
 }
-

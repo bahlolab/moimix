@@ -20,4 +20,3 @@ binommix(counts_matrix, sample.id, k, coverage_threshold = 0L, niter = 1000)
 \description{
 Fit binomial mixture model on coverage data
 }
-

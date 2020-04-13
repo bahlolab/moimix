@@ -9,9 +9,9 @@ rtexp(n, theta, t)
 \arguments{
 \item{n}{number of random values to return}
 
-\item{t}{cut-off threshold for truncation}
+\item{theta}{rate parameter for exponential}
 
-\item{mu}{rate parameter for exponential}
+\item{t}{cut-off threshold for truncation}
 }
 \value{
 n random values from TEXP
@@ -23,4 +23,3 @@ Simulate random numbers from a truncated exponential distribution
 Simulate SNP alternate allele frequencies from a truncated exponential distribution
 Code is modified from that given at https://stat.ethz.ch/pipermail/r-help/2010-June/242615.html
 }
-

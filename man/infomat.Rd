@@ -18,4 +18,3 @@ A 2k by 2k Fisher information matrix
 Estimate the Fisher information matrix for
 a bionimal mixture model
 }
-

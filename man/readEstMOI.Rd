@@ -18,4 +18,3 @@ Parse estMOI log files in a directory into tidy data frame
 \note{
 Assumes that outPrefix set as option in estMOI is set to sample identifer.
 }
-

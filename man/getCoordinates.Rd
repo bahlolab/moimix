@@ -12,4 +12,3 @@ getCoordinates(gdsfile)
 \description{
 Helper function for producing data frame of genomic coordinates
 }
-
